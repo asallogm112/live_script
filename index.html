@@ -1,0 +1,4052 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>无人直播 · 口播控制台</title>
+    <style>
+        /* ============ Reset & Variables ============ */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #f5f5fa;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f0f0f7;
+            --bg-card: #e8e8f2;
+            --bg-hover: #dddde8;
+            --bg-input: #fafafe;
+            --border: #dcdce8;
+            --border-active: #6c5ce7;
+            --text-primary: #1a1a2e;
+            --text-secondary: #5a5a78;
+            --text-muted: #9898b0;
+            --accent: #6c5ce7;
+            --accent-light: #5a4bd1;
+            --accent-glow: rgba(108, 92, 231, 0.2);
+            --success: #009b78;
+            --danger: #e8456c;
+            --warning: #e6a800;
+            --highlight: #e6a800;
+            --highlight-bg: rgba(230, 168, 0, 0.18);
+            --danmaku-1: #4a9eff;
+            --danmaku-2: #00b388;
+            --danmaku-3: #e6a800;
+            --danmaku-4: #e85a82;
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow: 0 2px 16px rgba(0,0,0,.06);
+            --transition: 0.2s cubic-bezier(.4,0,.2,1);
+        }
+
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ============ Layout ============ */
+        .app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ============ Left Panel - Danmaku ============ */
+        .danmaku-panel {
+            width: 340px;
+            min-width: 340px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .danmaku-header {
+            padding: 20px 20px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .danmaku-header h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .danmaku-header h2 .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--accent), #8b7cf7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .danmaku-badge {
+            background: var(--accent);
+            color: #fff;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            animation: pulse-badge 2s infinite;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+            50% { box-shadow: 0 0 0 6px transparent; }
+        }
+
+        .danmaku-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 12px;
+            scroll-behavior: smooth;
+        }
+
+        .danmaku-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .danmaku-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .danmaku-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .danmaku-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            transition: all var(--transition);
+            animation: slideIn 0.3s ease;
+        }
+
+        .danmaku-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--border);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        .danmaku-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .c1 { background: var(--danmaku-1); }
+        .c2 { background: var(--danmaku-2); }
+        .c3 { background: var(--danmaku-3); }
+        .c4 { background: var(--danmaku-4); }
+
+        .danmaku-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .danmaku-user {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .danmaku-text {
+            font-size: 13px;
+            color: #1f1f3a;
+            font-weight: 500;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+
+        .danmaku-time {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 400;
+            white-space: nowrap;
+        }
+
+        .danmaku-replied-label {
+            font-size: 10px;
+            color: var(--success);
+            font-weight: 600;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        /* Danmaku reply button */
+        .danmaku-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .danmaku-reply-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: all var(--transition);
+            flex-shrink: 0;
+        }
+
+        .danmaku-reply-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        /* ============ Reply Modal ============ */
+        .reply-modal {
+            align-items: flex-start;
+            padding-top: 60px;
+        }
+
+        .reply-modal .modal {
+            width: 480px;
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .reply-modal .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .reply-danmaku-quote {
+            background: var(--bg-tertiary);
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--text-primary);
+            border-left: 3px solid var(--accent);
+            line-height: 1.5;
+        }
+
+        .reply-danmaku-quote .quote-user {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .reply-match-info {
+            font-size: 12px;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: rgba(0, 155, 120, 0.06);
+            border-radius: var(--radius-sm);
+        }
+
+        .reply-match-info .match-keywords {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .reply-match-info .kw-tag {
+            background: rgba(0, 155, 120, 0.15);
+            color: var(--success);
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .reply-no-match {
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .reply-options-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .reply-options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .reply-option-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .reply-option-card:hover {
+            border-color: var(--accent);
+            background: var(--bg-hover);
+        }
+
+        .reply-option-card.selected {
+            border-color: var(--accent);
+            background: rgba(108, 92, 231, 0.06);
+        }
+
+        .reply-option-text {
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .reply-option-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .reply-option-meta .tts-tag {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            background: var(--bg-card);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-light);
+        }
+
+        .reply-option-check {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 10px;
+            color: transparent;
+            transition: all var(--transition);
+        }
+
+        .reply-option-card.selected .reply-option-check {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #fff;
+        }
+
+        /* Manual reply area */
+        .reply-manual-section {
+            border-top: 1px dashed var(--border);
+            padding-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .reply-manual-section .section-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .reply-manual-section textarea {
+            width: 100%;
+            min-height: 72px;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: inherit;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+        }
+
+        .reply-manual-section textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .reply-manual-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-reply-polish {
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid var(--warning);
+            color: var(--warning);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-reply-polish:hover {
+            background: rgba(230, 168, 0, 0.12);
+        }
+
+        .btn-reply-send {
+            padding: 8px 20px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+        }
+
+        .btn-reply-send:hover {
+            background: #7c6ff7;
+            box-shadow: 0 2px 12px var(--accent-glow);
+        }
+
+        .btn-reply-send:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .reply-char-count {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* ============ Right Panel ============ */
+        .main-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        /* ============ Content Area ============ */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 16px 20px;
+        }
+
+        /* ============ Play Queue ============ */
+        .queue-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .queue-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+        }
+
+        .queue-list::-webkit-scrollbar {
+            width: 5px;
+        }
+        .queue-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .queue-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 5px;
+        }
+
+        .queue-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius);
+            border: 1px solid transparent;
+            transition: all var(--transition);
+        }
+
+        .queue-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--border);
+        }
+
+        .queue-item.playing {
+            border-color: var(--success) !important;
+            background: rgba(0, 155, 120, 0.06) !important;
+        }
+
+        .queue-item.played {
+            opacity: 0.55;
+        }
+
+        .queue-item.played:hover {
+            opacity: 0.85;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .queue-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .queue-item.playing .queue-num {
+            background: rgba(0, 155, 120, 0.12);
+            color: var(--success);
+        }
+
+        .queue-text {
+            flex: 1;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            min-width: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .queue-text.expanded {
+            display: block;
+            -webkit-line-clamp: unset;
+            overflow: visible;
+        }
+
+        .queue-item.playing .queue-text {
+            display: block;
+            -webkit-line-clamp: unset;
+            overflow: visible;
+            cursor: default;
+        }
+
+        .queue-text .char {
+            transition: all 0.15s ease;
+        }
+
+        .queue-text .char.current {
+            color: var(--danger);
+            background: rgba(232, 69, 108, 0.15);
+            border-radius: 3px;
+            font-weight: 700;
+        }
+
+        .queue-tag {
+            font-size: 10px;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .queue-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all var(--transition);
+            white-space: nowrap;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--text-muted);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-danger {
+            color: var(--danger);
+            border-color: transparent;
+        }
+        .btn-danger:hover {
+            background: rgba(232, 69, 108, 0.12);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .btn-warning {
+            color: var(--warning);
+            border-color: transparent;
+        }
+        .btn-warning:hover {
+            background: rgba(230, 168, 0, 0.12);
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .btn-edit {
+            color: var(--accent-light);
+            border-color: transparent;
+        }
+        .btn-edit:hover {
+            background: rgba(108, 92, 231, 0.12);
+            border-color: var(--accent);
+            color: var(--accent-light);
+        }
+
+        /* ============ Edit Modal ============ */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            width: 520px;
+            max-width: 90vw;
+            transform: translateY(10px);
+            transition: transform 0.2s;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal h3 {
+            font-size: 16px;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .modal textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: inherit;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+        }
+
+        .modal textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+        }
+        .btn-primary:hover {
+            background: #7c6ff7;
+            color: #fff;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 20px;
+        }
+
+        /* ============ Toast ============ */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 13px;
+            z-index: 10000;
+            animation: toastIn 0.3s ease;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* ============ Empty State ============ */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+            text-align: center;
+            gap: 8px;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 36px;
+            opacity: 0.4;
+            margin-bottom: 8px;
+        }
+
+        /* ============ Queue Toolbar ============ */
+        .queue-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .queue-toolbar-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .room-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .room-id-input {
+            width: 150px;
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 12px;
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .room-id-input:focus {
+            border-color: var(--accent);
+        }
+
+        .room-id-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-live {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s, opacity 0.2s;
+        }
+
+        .btn-live.off {
+            background: #22c55e;
+            color: #fff;
+        }
+
+        .btn-live.off:hover {
+            background: #16a34a;
+        }
+
+        .btn-live.on {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .btn-live.on:hover {
+            background: #dc2626;
+        }
+
+        .btn-pause {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            background: #f59e0b;
+            color: #fff;
+            transition: background 0.2s;
+        }
+
+        .btn-pause:hover {
+            background: #d97706;
+        }
+
+        .btn-pause.resumed {
+            background: #22c55e;
+        }
+
+        .btn-pause.resumed:hover {
+            background: #16a34a;
+        }
+
+        .btn-kb {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            font-weight: 600;
+        }
+        .btn-kb:hover {
+            background: #7c6ff7;
+            color: #fff;
+        }
+
+        /* ============ Knowledge Base Modal ============ */
+        .kb-modal-overlay .modal.kb-modal {
+            width: 900px;
+            max-width: 96vw;
+            max-height: 84vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .kb-modal-overlay .modal.kb-modal h3 {
+            margin-bottom: 14px;
+            flex-shrink: 0;
+            padding: 20px 20px 0;
+        }
+
+        .kb-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--border);
+            flex-shrink: 0;
+            margin-bottom: 16px;
+        }
+
+        .kb-tab {
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all var(--transition);
+            user-select: none;
+        }
+
+        .kb-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .kb-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .kb-content {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .kb-add-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+            align-items: center;
+            flex-shrink: 0;
+            padding: 10px 12px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+        }
+
+        .kb-add-bar input,
+        .kb-add-bar select {
+            padding: 8px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 12px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .kb-add-bar input:focus,
+        .kb-add-bar select:focus {
+            border-color: var(--accent);
+        }
+
+        .kb-add-bar input { flex: 1; min-width: 0; }
+        .kb-add-bar select { width: 110px; flex-shrink: 0; }
+
+        .kb-add-bar-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .kb-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+        }
+
+        .kb-list::-webkit-scrollbar {
+            width: 5px;
+        }
+        .kb-list::-webkit-scrollbar-track { background: transparent; }
+        .kb-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+
+        .kb-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 14px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            transition: all var(--transition);
+        }
+
+        .kb-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--border);
+        }
+
+        .kb-item-main {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .kb-item-text {
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .kb-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .kb-meta-tag {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: var(--bg-card);
+            color: var(--text-muted);
+        }
+
+        .kb-meta-category {
+            background: rgba(108, 92, 231, 0.1);
+            color: var(--accent-light);
+        }
+
+        .kb-meta-file {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 10px;
+            color: var(--success);
+        }
+
+        .kb-meta-file.missing {
+            color: var(--danger);
+            text-decoration: line-through;
+        }
+
+        .kb-meta-time {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .kb-item-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            align-items: center;
+        }
+
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .btn-sm:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        .btn-sm.btn-audio {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-card);
+            border: 1.5px solid var(--border);
+            color: var(--accent);
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .btn-sm.btn-audio:hover {
+            background: rgba(108, 92, 231, 0.08);
+            border-color: var(--accent);
+        }
+        .btn-sm.btn-audio.playing {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .btn-sm.btn-audio svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+        .btn-sm.btn-use {
+            color: var(--success);
+            border-color: var(--success);
+        }
+        .btn-sm.btn-use:hover {
+            background: rgba(0, 155, 120, 0.1);
+        }
+
+        .btn-sm.btn-ai {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: #fff;
+            border: none;
+        }
+        .btn-sm.btn-ai:hover {
+            background: linear-gradient(135deg, #5a4bd1, #8e7cff);
+        }
+
+        .kb-edit-area {
+            width: 100%;
+            min-height: 60px;
+            padding: 8px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: inherit;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+        }
+        .kb-edit-area:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        /* AI Generation styles */
+        .ai-generator {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 20px;
+        }
+
+        .ai-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .ai-section h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-section h4 .icon {
+            font-size: 18px;
+        }
+
+        .ai-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .ai-input-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ai-input-label .hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+
+        .ai-textarea-large {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: inherit;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+        }
+
+        .ai-textarea-large:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .ai-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 16px;
+        }
+
+        .ai-btn {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-btn:hover {
+            background: linear-gradient(135deg, #5a4bd1, #8e7cff);
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+        }
+
+        .ai-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .ai-btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .ai-btn-secondary:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+
+        .ai-progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .ai-progress-bar {
+            flex: 1;
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .ai-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6c5ce7, #a29bfe);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .ai-results {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ai-result-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .ai-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .ai-result-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .ai-result-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .ai-result-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+
+        .ai-result-meta {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .ai-result-category {
+            background: rgba(108, 92, 231, 0.1);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .ai-result-keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .ai-kw-tag {
+            background: rgba(0, 155, 120, 0.1);
+            color: var(--success);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .ai-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .ai-status {
+            padding: 10px 14px;
+            background: rgba(108, 92, 231, 0.08);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            color: var(--accent);
+            margin-top: 12px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .ai-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(108, 92, 231, 0.3);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .kb-replies-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .kb-reply-line {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 2px 8px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .kb-reply-line .del-reply {
+            cursor: pointer;
+            color: var(--danger);
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .kb-empty {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* ============ AI Automation Panel → KB Sidebar ============ */
+        .kb-layout {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            gap: 0;
+        }
+
+        .kb-sidebar {
+            width: 168px;
+            min-width: 168px;
+            background: linear-gradient(180deg, rgba(108,92,231,0.04) 0%, rgba(108,92,231,0.01) 100%);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 16px 12px;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+
+        .kb-sidebar-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .kb-sidebar-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .kb-sidebar-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition);
+            background: transparent;
+            border: 1px solid transparent;
+        }
+
+        .kb-sidebar-card:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border);
+        }
+
+        .kb-sidebar-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(108,92,231,0.12), rgba(108,92,231,0.05));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .kb-sidebar-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .kb-sidebar-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .kb-sidebar-status {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .kb-sidebar-stats {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .kb-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .kb-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .kb-stat-val {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        .kb-main {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 0 0 0 20px;
+        }
+
+        @media (max-width: 900px) {
+            .danmaku-panel {
+                width: 280px;
+                min-width: 280px;
+            }
+            .queue-actions .btn span {
+                display: none;
+            }
+            .kb-sidebar {
+                width: 140px;
+                min-width: 140px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .kb-sidebar {
+                width: 100px;
+                min-width: 100px;
+                padding: 12px 8px;
+            }
+            .kb-sidebar-card {
+                padding: 8px;
+                gap: 6px;
+            }
+            .kb-sidebar-icon {
+                width: 28px;
+                height: 28px;
+                font-size: 13px;
+            }
+            .kb-sidebar-name {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- ============ LEFT: 弹幕面板 ============ -->
+        <aside class="danmaku-panel">
+            <div class="danmaku-header">
+                <h2>
+                    <span class="icon">💬</span>
+                    直播弹幕
+                </h2>
+                <span class="danmaku-badge" id="danmakuCount">0</span>
+            </div>
+            <div class="danmaku-list" id="danmakuList">
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <div>暂无弹幕</div>
+                    <div style="font-size:11px;margin-top:4px;">等待观众提问…</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ============ RIGHT: 主面板 ============ -->
+        <main class="main-panel">
+            <!-- Content -->
+            <div class="content-area">
+                <!-- Play Queue -->
+                <section class="queue-section">
+                    <div class="queue-toolbar">
+                        <span class="queue-toolbar-title">📋 播放列表</span>
+                        <div class="room-controls">
+                            <input type="text" class="room-id-input" placeholder="输入Room ID" id="roomIdInput" value="">
+                            <button class="btn btn-live off" id="btnLiveToggle" onclick="app.toggleLive()">🔴 开启直播</button>
+                            <button class="btn btn-pause" id="btnPauseToggle" onclick="app.pauseBroadcast()" style="display: none;">⏸ 暂停口播</button>
+                        </div>
+                        <button class="btn btn-kb" onclick="app.openBcastTextModal()">📝 口播文案</button>
+                        <button class="btn btn-kb" onclick="app.openAnswerTextModal()">💬 问答文案</button>
+                        <button class="btn btn-kb" onclick="app.openKB()">📚 历史音频</button>
+                    </div>
+                    <div class="queue-list" id="queueList">
+                        <div class="empty-state">
+                            <div class="empty-icon">📝</div>
+                            <div>队列为空</div>
+                        </div>
+                    </div>
+                </section>
+
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <h3>✏️ 修改文案</h3>
+            <textarea id="editTextarea" placeholder="修改文案内容…"></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="btnCancel">取消</button>
+                <button class="btn btn-primary" id="btnSave">保存修改</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reply Modal -->
+    <div class="modal-overlay reply-modal" id="replyModal">
+        <div class="modal">
+            <h3 id="replyModalTitle">💬 回复弹幕</h3>
+            <div class="modal-body" id="replyModalBody">
+                <!-- dynamically filled -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="btnReplyCancel">取消</button>
+                <button class="btn-reply-send" id="btnReplySend" disabled>确认并加入队列</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 口播文案 Modal -->
+    <div class="modal-overlay" id="bcastTextModal">
+        <div class="modal" style="max-width: 700px;">
+            <h3>📝 口播文案知识库</h3>
+            <div style="margin: 12px 0; color: var(--text-muted); font-size: 12px;">每行一条文案，用于自动生成口播话术</div>
+            <textarea id="bcastTextArea" class="text-modal-ta" placeholder="请输入口播文案，每行一条...&#10;例如：&#10;这款产品采用进口材质，手感非常好&#10;今天直播间专属价格，比平时便宜50元"></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="app.saveBcastText()">💾 保存</button>
+                <button class="btn btn-cancel" onclick="app.downloadBcastText()">⬇️ 下载 broadcast.txt</button>
+                <button class="btn btn-cancel" onclick="document.getElementById('bcastTextModal').classList.remove('active')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 问答文案 Modal -->
+    <div class="modal-overlay" id="answerTextModal">
+        <div class="modal" style="max-width: 700px;">
+            <h3>💬 问答文案知识库</h3>
+            <div style="margin: 12px 0; color: var(--text-muted); font-size: 12px;">每行一条问答，格式：问题 : 答案</div>
+            <textarea id="answerTextArea" class="text-modal-ta" placeholder="请输入问答文案，每行一条...&#10;格式：问题 : 答案&#10;例如：&#10;多少钱 : 这个只要99元，非常划算&#10;发货吗 : 现货秒发，48小时内发货"></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="app.saveAnswerText()">💾 保存</button>
+                <button class="btn btn-cancel" onclick="app.downloadAnswerText()">⬇️ 下载 answer.txt</button>
+                <button class="btn btn-cancel" onclick="document.getElementById('answerTextModal').classList.remove('active')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Knowledge Base Modal -->
+    <div class="modal-overlay kb-modal-overlay" id="kbModal">
+        <div class="modal kb-modal">
+            <div class="kb-layout">
+                <div class="kb-sidebar">
+                    <div class="kb-sidebar-title">🤖 智能助手</div>
+                    <div class="kb-sidebar-cards">
+                        <div class="kb-sidebar-card" onclick="app.autoReplyToggle()">
+                            <div class="kb-sidebar-icon">💬</div>
+                            <div class="kb-sidebar-info">
+                                <div class="kb-sidebar-name">自动回复</div>
+                                <div class="kb-sidebar-status" id="autoReplyStatus">已关闭</div>
+                            </div>
+                        </div>
+                        <div class="kb-sidebar-card" onclick="app.showAnalytics()">
+                            <div class="kb-sidebar-icon">📊</div>
+                            <div class="kb-sidebar-info">
+                                <div class="kb-sidebar-name">数据统计</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="kb-sidebar-stats">
+                        <div class="kb-stat-row">
+                            <span class="kb-stat-label">匹配率</span>
+                            <span class="kb-stat-val" id="matchRate">0%</span>
+                        </div>
+                        <div class="kb-stat-row">
+                            <span class="kb-stat-label">回复速度</span>
+                            <span class="kb-stat-val" id="replySpeed">0s</span>
+                        </div>
+                        <div class="kb-stat-row">
+                            <span class="kb-stat-label">AI生成</span>
+                            <span class="kb-stat-val" id="aiGenerated">0</span>
+                        </div>
+                        <div class="kb-stat-row">
+                            <span class="kb-stat-label">知识库</span>
+                            <span class="kb-stat-val" id="kbCount">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="kb-main">
+                    <div class="kb-tabs" id="kbTabs">
+                        <div class="kb-tab" data-tab="bcast-audio">🎙️ 口播音频</div>
+                        <div class="kb-tab" data-tab="reply-audio">🔊 回复音频</div>
+                    </div>
+                    <div class="kb-content" id="kbContent">
+                        <!-- dynamically filled -->
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-cancel" id="btnKBClose">关闭</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== STATE ====================
+            const state = {
+                playlist: [],
+                playingIdx: -1,
+                currentPlaying: null,
+                danmaku: [],
+                editingIndex: null,
+                editingType: 'playlist',
+                charTimer: null,
+                currentCharIndex: 0,
+                replyTargetIndex: null,
+                replySelectedOption: -1,
+                replyManualText: '',
+                // Knowledge bases
+                broadcastKB: [],
+                replyRules: [],
+                broadcastAudioLog: [],
+                replyAudioLog: [],
+                kbIdCounter: 0,
+                // 文案知识库
+                bcastText: localStorage.getItem('bcastText') || '',
+                answerText: localStorage.getItem('answerText') || '',
+                // AI generation state
+                aiScripts: [],
+                aiGenerating: false,
+                aiProgress: 0,
+                aiGeneratedBroadcasts: [],
+                aiGeneratedRules: [],
+                // Automation state
+                roomId: '',
+                liveActive: false,
+                paused: false,
+                autoReplyEnabled: false,
+                stats: {
+                    totalDanmaku: 0,
+                    matchedDanmaku: 0,
+                    totalReplyTime: 0,
+                    replyCount: 0,
+                    aiGeneratedCount: 0,
+                },
+                quickTemplates: [
+                    { title: '欢迎话术', text: '欢迎新来的小伙伴！我是主播XXX，今天给大家带来超值好物，千万不要错过哦～' },
+                    { title: '产品介绍', text: '这款产品的核心卖点是XXX，它能够解决XXX问题，使用起来特别方便，性价比超高！' },
+                    { title: '优惠促销', text: '今天直播间专属福利，下单立减XX元，还送价值XX元的赠品，只有今天才有这个价格！' },
+                    { title: '发货说明', text: '我们承诺48小时内发货，发顺丰快递，全国大部分地区2-3天就能收到，偏远地区稍微慢一点～' },
+                    { title: '售后保障', text: '支持7天无理由退换货，有任何质量问题我们承担来回运费，让您购物无忧！' },
+                    { title: '催单话术', text: '想要的宝宝们赶紧下单哦，库存不多了，错过今天这个价格就再也买不到了！' },
+                ],
+            };
+            // keyword index cache
+            let keywordIndex = {};
+
+            function rebuildKeywordIndex() {
+                keywordIndex = {};
+                state.replyRules.forEach((rule, i) => {
+                    rule.keywords.forEach(kw => {
+                        if (!keywordIndex[kw]) keywordIndex[kw] = [];
+                        keywordIndex[kw].push(i);
+                    });
+                });
+            }
+
+            function genKBId() {
+                state.kbIdCounter++;
+                return 'kb_' + state.kbIdCounter;
+            }
+
+            // ==================== DOM REFS ====================
+            const $danmakuList   = document.getElementById('danmakuList');
+            const $danmakuCount  = document.getElementById('danmakuCount');
+            const $queueList     = document.getElementById('queueList');
+
+            const $editModal     = document.getElementById('editModal');
+            const $editTextarea  = document.getElementById('editTextarea');
+            const $btnCancel     = document.getElementById('btnCancel');
+            const $btnSave       = document.getElementById('btnSave');
+            const $replyModal    = document.getElementById('replyModal');
+            const $btnReplyCancel= document.getElementById('btnReplyCancel');
+            const $btnReplySend  = document.getElementById('btnReplySend');
+            const $replyTitle    = document.getElementById('replyModalTitle');
+            const $replyBody     = document.getElementById('replyModalBody');
+            const $kbModal       = document.getElementById('kbModal');
+            const $kbContent     = document.getElementById('kbContent');
+            const $kbTabs        = document.getElementById('kbTabs');
+            let kbActiveTab      = 'broadcast';
+            let kbEditState      = {}; // { id: editingId, type: 'broadcast'|'rule' }
+
+            // ==================== KEYWORD MATCHING ====================
+            function matchKeywords(text) {
+                const matched = [];
+                const seen = new Set();
+                const lowerText = text.toLowerCase();
+                
+                // 同义词映射
+                const synonyms = {
+                    '发货': ['发出', '发出货', '发出去', '发货了', '发货吗', '发货吧', '发货时间', '发货日期'],
+                    '快递': ['物流', '运送', '运输', '寄送', '寄出', '邮寄'],
+                    '退货': ['退款', '退换', '退掉', '退回去', '退回', '退还'],
+                    '售后': ['售后服务', '客服', '客服服务', '客户服务', '服务'],
+                    '价格': ['价钱', '价位', '价目', '售价', '卖价', '定价'],
+                    '优惠': ['折扣', '打折', '降价', '特价', '活动', '促销'],
+                    '质量': ['品质', '质地', '好坏', '优劣', '品质如何'],
+                    '库存': ['存货', '现货', '有货', '没货', '缺货', '断货'],
+                    '尺寸': ['大小', '规格', '尺码', '号型', '号码'],
+                    '颜色': ['色彩', '色调', '色号', '色系', '花色'],
+                };
+                
+                // 模糊匹配函数
+                function fuzzyMatch(keyword, text) {
+                    const kw = keyword.toLowerCase();
+                    const txt = lowerText;
+                    
+                    // 1. 精确匹配
+                    if (txt.includes(kw)) return 1.0;
+                    
+                    // 2. 同义词匹配
+                    if (synonyms[kw]) {
+                        for (const synonym of synonyms[kw]) {
+                            if (txt.includes(synonym)) return 0.9;
+                        }
+                    }
+                    
+                    // 3. 部分匹配（包含关系）
+                    for (let i = 0; i < kw.length; i++) {
+                        for (let j = i + 2; j <= kw.length; j++) {
+                            const sub = kw.substring(i, j);
+                            if (sub.length >= 2 && txt.includes(sub)) {
+                                return 0.7 * (sub.length / kw.length);
+                            }
+                        }
+                    }
+                    
+                    // 4. 拼音匹配（简单实现）
+                    const pinyinMap = {
+                        'fa': '发',
+                        'huo': '货',
+                        'tui': '退',
+                        'kuai': '快',
+                        'di': '递',
+                        'shou': '售',
+                        'hou': '后',
+                        'you': '优',
+                        'hui': '惠',
+                    };
+                    
+                    // 5. 语义相似度（简化的字符串相似度）
+                    function similarity(s1, s2) {
+                        if (s1 === s2) return 1.0;
+                        if (s1.length === 0 || s2.length === 0) return 0.0;
+                        
+                        const longer = s1.length > s2.length ? s1 : s2;
+                        const shorter = s1.length > s2.length ? s2 : s1;
+                        
+                        // 编辑距离相似度
+                        let distance = 0;
+                        for (let i = 0; i < shorter.length; i++) {
+                            if (longer.includes(shorter[i])) {
+                                distance++;
+                            }
+                        }
+                        
+                        return distance / longer.length;
+                    }
+                    
+                    // 检查每个字符的相似度
+                    let totalSimilarity = 0;
+                    for (const char of kw) {
+                        let maxCharSimilarity = 0;
+                        for (let i = 0; i < txt.length; i++) {
+                            const charSimilarity = similarity(char, txt[i]);
+                            if (charSimilarity > maxCharSimilarity) {
+                                maxCharSimilarity = charSimilarity;
+                            }
+                        }
+                        totalSimilarity += maxCharSimilarity;
+                    }
+                    
+                    const avgSimilarity = totalSimilarity / kw.length;
+                    if (avgSimilarity > 0.6) {
+                        return avgSimilarity * 0.6;
+                    }
+                    
+                    return 0.0;
+                }
+                
+                // 对每个关键词进行匹配
+                for (const [kw, indices] of Object.entries(keywordIndex)) {
+                    const matchScore = fuzzyMatch(kw, text);
+                    
+                    if (matchScore >= 0.5) { // 匹配阈值
+                        for (const idx of indices) {
+                            if (!seen.has(idx)) {
+                                seen.add(idx);
+                                const rule = state.replyRules[idx];
+                                
+                                // 计算该规则的所有关键词匹配分数
+                                const keywordScores = rule.keywords.map(k => ({
+                                    keyword: k,
+                                    score: fuzzyMatch(k, text)
+                                })).filter(k => k.score >= 0.5);
+                                
+                                if (keywordScores.length > 0) {
+                                    matched.push({
+                                        rule: rule,
+                                        matchedKeywords: keywordScores.map(k => k.keyword),
+                                        matchScore: Math.max(...keywordScores.map(k => k.score)),
+                                        confidence: keywordScores.length / rule.keywords.length
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // 按匹配分数排序
+                matched.sort((a, b) => {
+                    if (b.matchScore !== a.matchScore) {
+                        return b.matchScore - a.matchScore;
+                    }
+                    return b.confidence - a.confidence;
+                });
+                
+                return matched;
+            }
+
+            // ==================== INIT SAMPLE DATA ====================
+            function initSampleData() {
+                // Broadcast knowledge base
+                state.broadcastKB = [
+                    { id: genKBId(), text: '大家好，欢迎来到直播间！今天给大家带来一款超级好用的产品，千万不要错过哦～', file: '开场问候.pcm', category: '开场' },
+                    { id: genKBId(), text: '这款产品的核心卖点就是轻薄便携，重量只有不到200克，放在包里完全不占空间，随时随地都能使用', file: '产品特点.mp3', category: '产品介绍' },
+                    { id: genKBId(), text: '现在下单的朋友们注意了，前100名享受专属优惠价，还赠送价值199元的配件大礼包，数量有限先到先得！', file: '促销活动.pcm', category: '促销' },
+                    { id: genKBId(), text: '很多朋友问这款产品和竞品相比有什么优势，我给大家详细对比一下，首先是续航时间，我们这款比竞品多出整整3个小时', file: '竞品对比.pcm', category: '产品介绍' },
+                ];
+                // Reply rules
+                state.replyRules = [
+                    { id: genKBId(), keywords: ['发货', '什么时候发', '今天发', '多久能收', '什么时候收到', '几天到', '几天能到', '几点发', '物流', '快递'],
+                      category: '发货时效',
+                      replies: [
+                        '亲，下单后48小时内发货哦～仓库打包很快的，正常情况下3-5天就能收到宝贝啦！',
+                        '今天下午5点前下单的话，当天就能发出！发顺丰快递，一般2-3天就到货了哈～',
+                        '我们的仓库在杭州，江浙沪次日达，其他地区2-4天就能送到哦！',
+                      ],
+                      ttsFile: '发货时效.mp3' },
+                    { id: genKBId(), keywords: ['无理由', '退货', '退款', '售后', '退换', '质量', '换货', '坏了', '有问题'],
+                      category: '售后政策',
+                      replies: [
+                        '支持7天无理由退换货哦，有任何质量问题我们包邮退换！亲可以放心下单～',
+                        '我们承诺7天无理由退货，30天质量问题包换，还有专属客服一对一处理，售后无忧！',
+                      ],
+                      ttsFile: '售后政策.pcm' },
+                    { id: genKBId(), keywords: ['包邮', '运费', '邮费', '偏远', '快递费'],
+                      category: '运费政策',
+                      replies: [
+                        '全国包邮的哈！包括新疆西藏等偏远地区也是免费包邮的，亲放心拍～',
+                      ],
+                      ttsFile: '运费政策.mp3' },
+                    { id: genKBId(), keywords: ['现货', '有货', '没货', '库存', '颜色', '尺码', '规格'],
+                      category: '库存查询',
+                      replies: [
+                        '这款目前所有颜色和尺码都有现货的，亲可以直接下单！先拍先发哈～',
+                        '有现货的哦，不过数量不多了，建议尽快下单，手慢就没了！',
+                      ],
+                      ttsFile: '库存查询.pcm' },
+                    { id: genKBId(), keywords: ['价格', '多少钱', '优惠', '便宜', '折扣', '活动', '券', '红包'],
+                      category: '价格优惠',
+                      replies: [
+                        '今天的活动价超级划算！领券后到手只要199，还送价值99元的赠品大礼包～',
+                        '今天直播间专属优惠，比平时便宜了100块！而且前50名还额外赠送配件，手慢无！',
+                      ],
+                      ttsFile: '价格优惠.pcm' },
+                    { id: genKBId(), keywords: ['使用', '怎么用', '教程', '功能', '方法', '说明书', '操作'],
+                      category: '使用教程',
+                      replies: [
+                        '使用非常简单的！打开开关就能用，我们还赠送了详细的使用教程视频，一看就会～',
+                        '产品操作很傻瓜式，开机即用。有任何不会的地方也可以随时联系客服哈！',
+                      ],
+                      ttsFile: '使用教程.pcm' },
+                ];
+                rebuildKeywordIndex();
+
+                // Broadcast audio log (seed from playlist)
+                state.broadcastAudioLog = [
+                    { id: genKBId(), text: '欢迎各位来到小�的直播间，今天给大家带来的是我们家的明星产品', file: '欢迎语.mp3', time: '06月02日 10:30:15' },
+                    { id: genKBId(), text: '这款产品是我们工厂直发，没有中间商赚差价，价格比专柜便宜一半', file: '产品介绍2.mp3', time: '06月02日 10:32:45' },
+                ];
+                // Reply audio log
+                state.replyAudioLog = [
+                    { id: genKBId(), text: '亲，下单后48小时内发货哦～仓库打包很快的', file: '发货时效.mp3', danmakuText: '什么时候发货？', time: '06月02日 10:35:20' },
+                    { id: genKBId(), text: '支持7天无理由退换货哦，有任何质量问题我们包邮退换', file: '售后政策.pcm', danmakuText: '支持七天无理由吗？', time: '06月02日 10:38:12' },
+                ];
+
+                state.playlist = [
+                    { text: '大家好，欢迎来到直播间！今天给大家带来一款超级好用的产品，千万不要错过哦～', file: '开场问候.pcm' },
+                    { text: '这款产品的核心卖点就是轻薄便携，重量只有不到200克，放在包里完全不占空间，随时随地都能使用', file: '产品特点.mp3' },
+                    { text: '现在下单的朋友们注意了，前100名享受专属优惠价，还赠送价值199元的配件大礼包，数量有限先到先得！', file: '促销活动.pcm' },
+                    { text: '很多朋友问这款产品和竞品相比有什么优势，我给大家详细对比一下，首先是续航时间，我们这款比竞品多出整整3个小时', file: '竞品对比.pcm' },
+                ];
+                state.danmaku = [
+                    { user: '小明同学',  text: '什么时候发货？',      time: '06月02日 12:45:03' },
+                    { user: '草莓味泡芙', text: '今天可以发货吗',      time: '06月02日 12:45:18' },
+                    { user: '老张爱生活', text: '支持七天无理由吗',     time: '06月02日 12:46:01' },
+                    { user: '夜空中最亮的星', text: '几点发货？',        time: '06月02日 12:46:22' },
+                    { user: '小雨淅淅',   text: '这个颜色有现货吗',     time: '06月02日 12:47:05' },
+                    { user: '数码控达人', text: '能包邮吗？偏远地区',    time: '06月02日 12:47:39' },
+                    { user: '彩虹糖',     text: '多久能收到货',         time: '06月02日 12:48:11' },
+                    { user: '咖啡不加糖', text: '怎么使用啊？有教程吗',  time: '06月02日 12:48:45' },
+                ];
+                renderAll();
+            }
+
+            // ==================== RENDER ====================
+            function renderAll() {
+                renderDanmaku();
+                renderQueue();
+                updateStatsDisplay();
+            }
+
+            // ==================== STATS & AUTOMATION ====================
+            function updateStatsDisplay() {
+                const matchRate = document.getElementById('matchRate');
+                const replySpeed = document.getElementById('replySpeed');
+                const aiGenerated = document.getElementById('aiGenerated');
+                const kbCount = document.getElementById('kbCount');
+                const autoReplyStatus = document.getElementById('autoReplyStatus');
+                
+                if (matchRate) {
+                    const rate = state.stats.totalDanmaku > 0 
+                        ? Math.round((state.stats.matchedDanmaku / state.stats.totalDanmaku) * 100)
+                        : 0;
+                    matchRate.textContent = rate + '%';
+                }
+                
+                if (replySpeed) {
+                    const avgTime = state.stats.replyCount > 0 
+                        ? (state.stats.totalReplyTime / state.stats.replyCount).toFixed(1)
+                        : '0';
+                    replySpeed.textContent = avgTime + 's';
+                }
+                
+                if (aiGenerated) {
+                    aiGenerated.textContent = state.stats.aiGeneratedCount;
+                }
+                
+                if (kbCount) {
+                    const totalKBs = state.broadcastKB.length + state.replyRules.length;
+                    kbCount.textContent = totalKBs;
+                }
+                
+                if (autoReplyStatus) {
+                    autoReplyStatus.textContent = state.autoReplyEnabled ? '已开启' : '已关闭';
+                    autoReplyStatus.style.color = state.autoReplyEnabled ? 'var(--success)' : 'var(--text-muted)';
+                }
+            }
+
+            function autoReplyToggle() {
+                state.autoReplyEnabled = !state.autoReplyEnabled;
+                updateStatsDisplay();
+                console.log('自动回复已' + (state.autoReplyEnabled ? '开启' : '关闭'));
+            }
+
+            function toggleLive() {
+                const input = document.getElementById('roomIdInput');
+                const btn = document.getElementById('btnLiveToggle');
+                const pauseBtn = document.getElementById('btnPauseToggle');
+                if (!input || !btn) return;
+                
+                if (!state.liveActive) {
+                    // 开启直播
+                    const roomId = input.value.trim();
+                    if (!roomId) {
+                        showToast('请输入 Room ID');
+                        return;
+                    }
+                    state.roomId = roomId;
+                    state.liveActive = true;
+                    state.paused = false;
+                    btn.textContent = '⏹ 停止直播';
+                    btn.className = 'btn btn-live on';
+                    // 显示暂停按钮
+                    if (pauseBtn) {
+                        pauseBtn.style.display = '';
+                        pauseBtn.textContent = '⏸ 暂停口播';
+                        pauseBtn.className = 'btn btn-pause';
+                    }
+                    // 队列有内容且不在播放中，开始播放
+                    if (state.playlist.length > 0) {
+                        if (state.playingIdx < 0) {
+                            startPlaying(0);
+                        }
+                    }
+                } else {
+                    // 停止直播
+                    state.liveActive = false;
+                    state.paused = false;
+                    state.roomId = '';
+                    // 立即停止口播
+                    if (state.charTimer) {
+                        clearInterval(state.charTimer);
+                        state.charTimer = null;
+                    }
+                    syncPlaying(-1);
+                    state.currentCharIndex = 0;
+                    btn.textContent = '🔴 开启直播';
+                    btn.className = 'btn btn-live off';
+                    // 隐藏暂停按钮
+                    if (pauseBtn) {
+                        pauseBtn.style.display = 'none';
+                    }
+                }
+                renderQueue();
+                console.log('直播状态：' + (state.liveActive ? '已开启 (Room ' + state.roomId + ')' : '已停止'));
+            }
+
+            function pauseBroadcast() {
+                const pauseBtn = document.getElementById('btnPauseToggle');
+                if (!pauseBtn) return;
+                
+                if (!state.paused) {
+                    // 暂停口播
+                    if (state.charTimer) {
+                        clearInterval(state.charTimer);
+                        state.charTimer = null;
+                    }
+                    state.paused = true;
+                    pauseBtn.textContent = '▶ 恢复口播';
+                    pauseBtn.className = 'btn btn-pause resumed';
+                    console.log('口播已暂停');
+                } else {
+                    // 恢复口播，从下一条文案开始
+                    state.paused = false;
+                    if (state.playingIdx >= 0 && state.playingIdx < state.playlist.length) {
+                        syncPlaying(state.playingIdx + 1);
+                    }
+                    if (state.playingIdx >= 0 && state.playingIdx < state.playlist.length) {
+                        state.currentCharIndex = 0;
+                        renderQueue();
+                        startCharTimer();
+                    } else {
+                        syncPlaying(-1);
+                    }
+                    pauseBtn.textContent = '⏸ 暂停口播';
+                    pauseBtn.className = 'btn btn-pause';
+                    renderQueue();
+                    console.log('口播已恢复');
+                }
+            }
+
+            function showAnalytics() {
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay active';
+                
+                const totalReplies = state.broadcastAudioLog.length + state.replyAudioLog.length;
+                const avgReplyTime = state.stats.replyCount > 0 
+                    ? (state.stats.totalReplyTime / state.stats.replyCount).toFixed(2)
+                    : '0.00';
+                const matchRate = state.stats.totalDanmaku > 0 
+                    ? ((state.stats.matchedDanmaku / state.stats.totalDanmaku) * 100).toFixed(1)
+                    : '0.0';
+                
+                modal.innerHTML = `
+                    <div class="modal" style="width: 500px; display: flex; flex-direction: column;">
+                        <h3>📊 数据分析面板</h3>
+                        <div style="flex: 1; overflow-y: auto; padding: 16px 0;">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px;">
+                                <div style="background: var(--bg-tertiary); padding: 16px; border-radius: var(--radius);">
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">弹幕总量</div>
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--accent);">${state.danmaku.length}</div>
+                                </div>
+                                <div style="background: var(--bg-tertiary); padding: 16px; border-radius: var(--radius);">
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">匹配率</div>
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--success);">${matchRate}%</div>
+                                </div>
+                                <div style="background: var(--bg-tertiary); padding: 16px; border-radius: var(--radius);">
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">总回复数</div>
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--warning);">${totalReplies}</div>
+                                </div>
+                                <div style="background: var(--bg-tertiary); padding: 16px; border-radius: var(--radius);">
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">平均回复时间</div>
+                                    <div style="font-size: 24px; font-weight: 700; color: var(--danger);">${avgReplyTime}s</div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">📈 知识库统计</div>
+                                <div style="display: flex; gap: 12px;">
+                                    <div style="flex: 1; background: var(--bg-tertiary); padding: 16px; border-radius: var(--radius);">
+                                        <div style="font-size: 12px; color: var(--text-muted);">口播音稿</div>
+                                        <div style="font-size: 18px; font-weight: 700; color: var(--accent);">${state.broadcastKB.length}</div>
+                                    </div>
+                                    <div style="flex: 1; background: var(--bg-tertiary); padding: 16px; border-radius: var(--radius);">
+                                        <div style="font-size: 12px; color: var(--text-muted);">回复规则</div>
+                                        <div style="font-size: 18px; font-weight: 700; color: var(--success);">${state.replyRules.length}</div>
+                                    </div>
+                                    <div style="flex: 1; background: var(--bg-tertiary); padding: 16px; border-radius: var(--radius);">
+                                        <div style="font-size: 12px; color: var(--text-muted);">AI生成</div>
+                                        <div style="font-size: 18px; font-weight: 700; color: var(--warning);">${state.stats.aiGeneratedCount}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px;">🔥 热门关键词</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    ${Object.entries(keywordIndex)
+                                        .sort((a, b) => b[1].length - a[1].length)
+                                        .slice(0, 10)
+                                        .map(([kw, indices]) => `
+                                            <div style="background: rgba(108, 92, 231, 0.1); color: var(--accent); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">
+                                                ${kw} <span style="opacity: 0.7;">(${indices.length})</span>
+                                            </div>
+                                        `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn btn-cancel" onclick="this.closest('.modal-overlay').remove()">关闭</button>
+                        </div>
+                    </div>
+                `;
+                
+                modal.onclick = (e) => {
+                    if (e.target === modal) modal.remove();
+                };
+                
+                document.body.appendChild(modal);
+            }
+
+            // 在回复时更新统计数据
+            function updateReplyStats(matched) {
+                state.stats.totalDanmaku++;
+                if (matched) {
+                    state.stats.matchedDanmaku++;
+                }
+                state.stats.replyCount++;
+                // 模拟回复时间（实际应用中应该使用真实时间）
+                state.stats.totalReplyTime += Math.random() * 2 + 1; // 1-3秒
+                updateStatsDisplay();
+            }
+
+            // 判断弹幕是否值得回复（过滤无意义内容）
+            function isMeaningfulDanmaku(text) {
+                const t = text.trim();
+                if (t.length < 3) return false;
+                // 纯表情/符号
+                if (/^[\uD800-\uDFFF\u2600-\u27BF\uD83C-\uD83E\u2000-\u206F\s]+$/.test(t)) return false;
+                // 纯数字（666、111、扣1等）
+                if (/^[\d+\s]+$/.test(t)) return false;
+                // 纯标点/语气词
+                if (/^[。！？.!?，,；;～~、\s]+$/.test(t)) return false;
+                // 纯问候（长度很短）
+                const greetings = ['你好', '大家好', '下午好', '晚上好', '早上好', '哈喽', 'hello', '在吗', '111', '666', '牛', '棒'];
+                if (greetings.includes(t.toLowerCase())) return false;
+                return true;
+            }
+
+            function renderDanmaku() {
+                $danmakuCount.textContent = state.danmaku.length;
+                if (state.danmaku.length === 0) {
+                    $danmakuList.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div>暂无弹幕</div></div>`;
+                    return;
+                }
+                const meaningful = state.danmaku.filter(d => isMeaningfulDanmaku(d.text)).length;
+                const colors = ['c1','c2','c3','c4'];
+                $danmakuList.innerHTML = state.danmaku.map((d, i) => {
+                    const canReply = isMeaningfulDanmaku(d.text);
+                    const matched = canReply ? matchKeywords(d.text) : [];
+                    const bestMatch = matched.length > 0 ? matched[0] : null;
+                    return `
+                    <div class="danmaku-item" data-index="${i}" style="${canReply ? '' : 'opacity:0.4;'}">
+                        <div class="danmaku-avatar ${colors[i % 4]}">${escHtml(d.user[0])}</div>
+                        <div class="danmaku-body">
+                            <div class="danmaku-user">${escHtml(d.user)}</div>
+                            <div class="danmaku-time">${escHtml(d.time || '')}</div>
+                            <div class="danmaku-text">${escHtml(d.text)}${!canReply ? ' <span style="color:var(--text-muted);font-size:10px;">[跳过]</span>' : ''}</div>
+                        </div>
+                        <div class="danmaku-actions">
+                            ${canReply ? `<button class="danmaku-reply-btn" onclick="app.openReply(${i})" title="手动回复">↩</button>` : ''}
+                            ${d.replied ? '<span class="danmaku-replied-label">[已回复]</span>' : ''}
+                            ${bestMatch ? `<span style="font-size:10px;color:var(--success);" title="匹配度:${Math.round(bestMatch.matchScore*100)}%">${Math.round(bestMatch.matchScore*100)}%</span>` : ''}
+                        </div>
+                    </div>
+                `}).join('');
+                $danmakuList.scrollTop = $danmakuList.scrollHeight;
+            }
+
+            function renderQueue() {
+                if (state.playlist.length === 0) {
+                    $queueList.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div>队列为空</div></div>`;
+                    return;
+                }
+                let html = '';
+                state.playlist.forEach((item, i) => {
+                    let cls = '';
+                    if (i < state.playingIdx) cls = 'played';
+                    else if (i === state.playingIdx) cls = 'playing';
+                    html += buildPlaylistItemHTML(item, i, i + 1, cls);
+                });
+                $queueList.innerHTML = html;
+            }
+
+            function buildPlaylistItemHTML(item, index, num, statusClass) {
+                const isPlayed = statusClass === 'played';
+                const isPlaying = statusClass === 'playing';
+                let textHTML;
+                if (isPlaying) {
+                    textHTML = [...item.text].map((ch, ci) =>
+                        `<span class="char${ci === state.currentCharIndex ? ' current' : ''}" data-ci="${ci}">${escHtml(ch)}</span>`
+                    ).join('');
+                } else {
+                    const displayText = isPlayed && item.text.length > 36 ? item.text.slice(0, 36) + '…' : item.text;
+                    textHTML = escHtml(displayText);
+                }
+                return `
+                    <div class="queue-item ${statusClass}" data-pidx="${index}">
+                        <div class="queue-num">${num}</div>
+                        <div class="queue-text" title="${escAttr(item.text)}" ${!isPlayed ? `onclick="app.toggleQueueExpand(event, this)"` : ''}>${textHTML}</div>
+                        <div class="queue-tag">${escHtml(item.file)}</div>
+                        <div class="queue-actions">
+                            <button class="btn" onclick="app.moveUp(${index})">↑</button>
+                            <button class="btn" onclick="app.moveDown(${index})">↓</button>
+                            <button class="btn btn-danger" onclick="app.removeItem(${index})">✕</button>
+                            <button class="btn btn-warning" onclick="app.insertItem(${index})">⚡</button>
+                            <button class="btn btn-edit" onclick="app.editItem(${index})">✎</button>
+                        </div>
+                    </div>`;
+            }
+
+            // ==================== REPLY MODAL ====================
+            function openReply(index) {
+                if (index < 0 || index >= state.danmaku.length) return;
+                state.replyTargetIndex = index;
+                state.replySelectedOption = -1;
+                state.replyManualText = '';
+                $btnReplySend.disabled = true;
+
+                const d = state.danmaku[index];
+                const matched = matchKeywords(d.text);
+
+                if (matched.length > 0) {
+                    // Matched: show options + manual fallback
+                    $replyTitle.innerHTML = `💬 回复弹幕 — ${escHtml(d.user)}`;
+                    let html = `
+                        <div class="reply-danmaku-quote">
+                            <div class="quote-user">${escHtml(d.user)} 说：</div>
+                            ${escHtml(d.text)}
+                        </div>
+                        <div class="reply-match-info">
+                            ✅ 匹配关键词
+                            <span class="match-keywords">
+                                ${matched.flatMap(m => m.matchedKeywords).filter((v, i, a) => a.indexOf(v) === i).slice(0, 6).map(k => `<span class="kw-tag">${escHtml(k)}</span>`).join('')}
+                            </span>
+                        </div>
+                        <div class="reply-options-label">选择回复文案（点击选中，确认后加入待播队列）：</div>
+                        <div class="reply-options-list">
+                    `;
+
+                    matched.forEach((m, mi) => {
+                        m.rule.replies.forEach((reply, ri) => {
+                            const optId = `opt_${mi}_${ri}`;
+                            html += `
+                                <div class="reply-option-card" data-opt="${optId}" data-reply="${escAttr(reply)}" data-tts="${escAttr(m.rule.ttsFile)}" onclick="app.selectReplyOption(this, '${optId}')">
+                                    <div class="reply-option-text">${escHtml(reply)}</div>
+                                    <div class="reply-option-meta">
+                                        <span class="tts-tag">📁 ${escHtml(m.rule.ttsFile)}</span>
+                                        <span class="reply-option-check">✓</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    });
+
+                    html += `
+                        </div>
+                        <div class="reply-manual-section">
+                            <div class="section-label">✏️ 或手动输入自定义回复：</div>
+                            <textarea id="replyManualInput" placeholder="输入自定义回复内容…" oninput="app.onReplyInput(this.value)">${escHtml(state.replyManualText)}</textarea>
+                            <div class="reply-manual-actions">
+                                <button class="btn-reply-polish" id="btnReplyPolish" onclick="app.polishReply()">✨ AI润色</button>
+                                <span class="reply-char-count" id="replyCharCount">0 / 200</span>
+                            </div>
+                        </div>
+                    `;
+                    $replyBody.innerHTML = html;
+                } else {
+                    // No match: manual input only
+                    $replyTitle.innerHTML = `✏️ 手动回复 — ${escHtml(d.user)}`;
+                    let html = `
+                        <div class="reply-danmaku-quote">
+                            <div class="quote-user">${escHtml(d.user)} 说：</div>
+                            ${escHtml(d.text)}
+                        </div>
+                        <div class="reply-no-match">
+                            ⚠️ 未匹配到预设回复关键词，请手动输入回复内容
+                        </div>
+                        <div class="reply-manual-section" style="border-top:none;padding-top:0;">
+                            <div class="section-label">回复内容：</div>
+                            <textarea id="replyManualInput" placeholder="输入回复内容…" oninput="app.onReplyInput(this.value)">${escHtml(state.replyManualText)}</textarea>
+                            <div class="reply-manual-actions">
+                                <button class="btn-reply-polish" id="btnReplyPolish" onclick="app.polishReply()">✨ AI润色</button>
+                                <span class="reply-char-count" id="replyCharCount">0 / 200</span>
+                            </div>
+                        </div>
+                    `;
+                    $replyBody.innerHTML = html;
+                }
+
+                // Auto-select if only 1 matched option
+                if (matched.length > 0) {
+                    const totalOptions = matched.reduce((sum, m) => sum + m.rule.replies.length, 0);
+                    if (totalOptions === 1) {
+                        const onlyOptId = `opt_0_0`;
+                        const card = document.querySelector(`.reply-option-card[data-opt="${onlyOptId}"]`);
+                        if (card) {
+                            card.classList.add('selected');
+                            state.replySelectedOption = onlyOptId;
+                            $btnReplySend.disabled = false;
+                        }
+                    }
+                }
+
+                $replyModal.classList.add('active');
+                $replyBody.scrollTop = 0;
+                // Focus manual input without scrolling
+                setTimeout(() => {
+                    const inp = document.getElementById('replyManualInput');
+                    if (inp) { inp.focus({ preventScroll: true }); }
+                }, 100);
+            }
+
+            function selectReplyOption(el, optId) {
+                // Deselect all
+                document.querySelectorAll('.reply-option-card').forEach(c => c.classList.remove('selected'));
+                // Select this
+                el.classList.add('selected');
+                state.replySelectedOption = optId;
+                $btnReplySend.disabled = false;
+            }
+
+            function onReplyInput(text) {
+                state.replyManualText = text;
+                const count = document.getElementById('replyCharCount');
+                if (count) count.textContent = `${text.length} / 200`;
+                if (text.trim().length > 0) {
+                    $btnReplySend.disabled = false;
+                    // Clear option selection when typing
+                    document.querySelectorAll('.reply-option-card').forEach(c => c.classList.remove('selected'));
+                    state.replySelectedOption = -1;
+                } else {
+                    // When custom text is cleared, re-select the single option if it's the only one
+                    const cards = document.querySelectorAll('.reply-option-card');
+                    if (cards.length === 1 && state.replySelectedOption === -1) {
+                        cards[0].classList.add('selected');
+                        state.replySelectedOption = cards[0].dataset.opt;
+                        $btnReplySend.disabled = false;
+                    } else if (state.replySelectedOption === -1) {
+                        $btnReplySend.disabled = true;
+                    }
+                }
+            }
+
+            function sendReply() {
+                if (state.replyTargetIndex === null) return;
+                let replyText, ttsFile;
+
+                if (state.replySelectedOption !== -1) {
+                    const card = document.querySelector(`.reply-option-card.selected`);
+                    if (card) {
+                        replyText = card.dataset.reply;
+                        ttsFile = card.dataset.tts;
+                    }
+                }
+
+                if (!replyText && state.replyManualText.trim()) {
+                    replyText = state.replyManualText.trim();
+                    ttsFile = '自定义回复.pcm';
+                }
+
+                if (!replyText) return;
+
+                const item = { text: replyText, file: ttsFile };
+                if (state.playingIdx >= 0) {
+                    state.playlist.splice(state.playingIdx + 1, 0, item);
+                    if (state.liveActive && !state.paused) {
+                        startPlaying(state.playingIdx + 1);
+                    }
+                } else {
+                    state.playlist.push(item);
+                    if (state.liveActive && !state.paused) {
+                        startPlaying(state.playlist.length - 1);
+                    }
+                }
+
+                state.danmaku[state.replyTargetIndex].replied = true;
+
+                // Log to reply audio history
+                state.replyAudioLog.push({
+                    id: genKBId(),
+                    text: replyText,
+                    file: ttsFile,
+                    danmakuText: state.danmaku[state.replyTargetIndex].text,
+                    time: new Date().toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                });
+
+                // Update stats
+                const matched = matchKeywords(state.danmaku[state.replyTargetIndex].text);
+                updateReplyStats(matched.length > 0);
+
+                closeReplyModal();
+                renderDanmaku();
+            }
+
+            function polishReply() {
+                const inp = document.getElementById('replyManualInput');
+                if (!inp || !inp.value.trim()) {
+                    if (state.replySelectedOption !== -1) {
+                        // Use selected option text as source
+                        const card = document.querySelector('.reply-option-card.selected');
+                        if (card) {
+                            inp.value = card.dataset.reply;
+                            state.replyManualText = inp.value;
+                            onReplyInput(inp.value);
+                        }
+                    }
+                    if (!inp.value.trim()) return;
+                }
+                const btn = document.getElementById('btnReplyPolish');
+                if (!btn) return;
+                const origHtml = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner"></span> 润色中…';
+                btn.style.pointerEvents = 'none';
+
+                setTimeout(() => {
+                    const text = inp.value;
+                    const polished = text
+                        .replace(/哦/g, '哦～')
+                        .replace(/哈/g, '哈～')
+                        .replace(/！/g, '！')
+                        + (text.endsWith('！') ? '' : ' 赶紧下单吧！');
+                    inp.value = polished;
+                    state.replyManualText = polished;
+                    onReplyInput(polished);
+                    btn.innerHTML = origHtml;
+                    btn.style.pointerEvents = '';
+                }, 1000 + Math.random() * 600);
+            }
+
+            function closeReplyModal() {
+                $replyModal.classList.remove('active');
+                state.replyTargetIndex = null;
+                state.replySelectedOption = -1;
+                state.replyManualText = '';
+            }
+
+            // ==================== PLAYING ====================
+            function syncPlaying(idx) {
+                state.playingIdx = idx;
+                if (idx >= 0 && idx < state.playlist.length) {
+                    state.currentPlaying = { index: idx, text: state.playlist[idx].text, file: state.playlist[idx].file };
+                } else {
+                    state.playingIdx = -1;
+                    state.currentPlaying = null;
+                }
+            }
+
+            function startPlaying(index) {
+                if (state.charTimer) clearInterval(state.charTimer);
+                if (index < 0 || index >= state.playlist.length) {
+                    syncPlaying(-1);
+                    renderQueue();
+                    return;
+                }
+                ensureTTSFile(state.playlist[index]);
+                syncPlaying(index);
+                state.currentCharIndex = 0;
+                renderQueue();
+                startCharTimer();
+            }
+
+            function startCharTimer() {
+                const totalChars = state.currentPlaying.text.length;
+                const interval = Math.max(100, 8000 / totalChars);
+                state.charTimer = setInterval(() => {
+                    state.currentCharIndex++;
+                    highlightCurrentChar();
+                    if (state.currentCharIndex >= totalChars) {
+                        clearInterval(state.charTimer);
+                        state.charTimer = null;
+                        setTimeout(onPlayFinished, 1200);
+                    }
+                }, interval);
+            }
+
+            function highlightCurrentChar() {
+                const textEl = $queueList.querySelector('.queue-item.playing .queue-text');
+                if (!textEl) return;
+                const chars = textEl.querySelectorAll('.char');
+                if (state.currentCharIndex > 0 && state.currentCharIndex - 1 < chars.length) {
+                    chars[state.currentCharIndex - 1].classList.remove('current');
+                }
+                if (state.currentCharIndex < chars.length) {
+                    chars[state.currentCharIndex].classList.add('current');
+                }
+            }
+
+            function onPlayFinished() {
+                if (state.playingIdx < 0) return;
+                // 直播未开启或暂停状态，不自动播放下一条
+                if (!state.liveActive || state.paused) {
+                    syncPlaying(-1);
+                    renderQueue();
+                    return;
+                }
+                const nextIdx = state.playingIdx + 1;
+                if (nextIdx < state.playlist.length) {
+                    syncPlaying(nextIdx);
+                    state.currentCharIndex = 0;
+                    renderQueue();
+                    startCharTimer();
+                } else {
+                    syncPlaying(-1);
+                    renderQueue();
+                }
+            }
+
+            // ==================== QUEUE ACTIONS ====================
+            function addToQueue(text) {
+                if (!text.trim()) return;
+                const short = text.replace(/[^\u4e00-\u9fa5\w]/g, '').slice(0, 6);
+                const file = short ? short + '.pcm' : '口播文案.pcm';
+                const item = { text: text.trim(), file };
+                state.playlist.push(item);
+                renderQueue();
+                if (state.liveActive && !state.paused && state.playingIdx < 0) {
+                    startPlaying(state.playlist.length - 1);
+                }
+            }
+
+            function removeItem(idx) {
+                if (idx < 0 || idx >= state.playlist.length) return;
+                if (!confirm('确定要移出这条播放项吗？')) return;
+
+                const wasPlaying = idx === state.playingIdx;
+                if (wasPlaying && state.charTimer) {
+                    clearInterval(state.charTimer);
+                    state.charTimer = null;
+                }
+
+                state.playlist.splice(idx, 1);
+                if (idx < state.playingIdx) state.playingIdx--;
+
+                if (state.playlist.length === 0) {
+                    syncPlaying(-1);
+                } else if (wasPlaying) {
+                    if (state.playingIdx >= 0 && state.playingIdx < state.playlist.length) {
+                        syncPlaying(state.playingIdx);
+                        startCharTimer();
+                    } else {
+                        syncPlaying(-1);
+                    }
+                } else if (state.playingIdx >= 0 && state.playingIdx < state.playlist.length) {
+                    syncPlaying(state.playingIdx);
+                } else {
+                    syncPlaying(-1);
+                }
+
+                renderQueue();
+            }
+
+            function insertItem(idx) {
+                if (idx < 0 || idx >= state.playlist.length) return;
+                if (idx === state.playingIdx) return;
+
+                const item = state.playlist.splice(idx, 1)[0];
+                if (idx < state.playingIdx) state.playingIdx--;
+
+                if (state.playingIdx >= 0) {
+                    state.playlist.splice(state.playingIdx + 1, 0, item);
+                    if (state.liveActive && !state.paused) {
+                        startPlaying(state.playingIdx + 1);
+                    }
+                } else {
+                    state.playlist.push(item);
+                    if (state.liveActive && !state.paused) {
+                        startPlaying(state.playlist.length - 1);
+                    }
+                }
+            }
+
+            function toggleQueueExpand(event, el) {
+                event.stopPropagation();
+                el.classList.toggle('expanded');
+            }
+
+            function moveUp(idx) {
+                if (idx <= 0 || idx >= state.playlist.length) return;
+                [state.playlist[idx - 1], state.playlist[idx]] = [state.playlist[idx], state.playlist[idx - 1]];
+                if (state.playingIdx === idx) state.playingIdx = idx - 1;
+                else if (state.playingIdx === idx - 1) state.playingIdx = idx;
+                renderQueue();
+            }
+
+            function moveDown(idx) {
+                if (idx < 0 || idx >= state.playlist.length - 1) return;
+                [state.playlist[idx], state.playlist[idx + 1]] = [state.playlist[idx + 1], state.playlist[idx]];
+                if (state.playingIdx === idx) state.playingIdx = idx + 1;
+                else if (state.playingIdx === idx + 1) state.playingIdx = idx;
+                renderQueue();
+            }
+
+            function editItem(idx) {
+                if (idx < 0 || idx >= state.playlist.length) return;
+                state.editingIndex = idx;
+                state.editingType = 'playlist';
+                $editTextarea.value = state.playlist[idx].text;
+                $editModal.classList.add('active');
+                $editTextarea.focus();
+            }
+
+            function saveEdit() {
+                if (state.editingIndex === null) return;
+                const newText = $editTextarea.value.trim();
+                if (!newText) return;
+                state.playlist[state.editingIndex].text = newText;
+                if (state.currentPlaying && state.playingIdx === state.editingIndex) {
+                    state.currentPlaying.text = newText;
+                }
+                renderQueue();
+                closeEditModal();
+            }
+
+            function closeEditModal() {
+                $editModal.classList.remove('active');
+                state.editingIndex = null;
+            }
+
+            // ==================== EVENT BINDINGS ====================
+            $btnCancel.addEventListener('click', closeEditModal);
+            $btnSave.addEventListener('click', saveEdit);
+            $editModal.addEventListener('click', (e) => { if (e.target === $editModal) closeEditModal(); });
+            $btnReplyCancel.addEventListener('click', closeReplyModal);
+            $btnReplySend.addEventListener('click', sendReply);
+            $replyModal.addEventListener('click', (e) => { if (e.target === $replyModal) closeReplyModal(); });
+
+            const $btnKBClose = document.getElementById('btnKBClose');
+            $btnKBClose.addEventListener('click', closeKB);
+            $kbModal.addEventListener('click', (e) => { if (e.target === $kbModal) closeKB(); });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if ($kbModal.classList.contains('active')) closeKB();
+                    else if ($replyModal.classList.contains('active')) closeReplyModal();
+                    else if ($editModal.classList.contains('active')) closeEditModal();
+                }
+            });
+
+            // ==================== HELPERS ====================
+            function escHtml(s) {
+                const d = document.createElement('div');
+                d.textContent = s;
+                return d.innerHTML;
+            }
+            function escAttr(s) {
+                return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
+            // ==================== TEXT KNOWLEDGE MODALS ====================
+            function showToast(msg) {
+                const existing = document.querySelector('.toast');
+                if (existing) existing.remove();
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = msg;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
+            }
+
+            function openBcastTextModal() {
+                const modal = document.getElementById('bcastTextModal');
+                const ta = document.getElementById('bcastTextArea');
+                if (ta) ta.value = state.bcastText;
+                modal.classList.add('active');
+                modal.onclick = function(e) {
+                    if (e.target === modal) modal.classList.remove('active');
+                };
+            }
+
+            function saveBcastText() {
+                const text = document.getElementById('bcastTextArea').value;
+                state.bcastText = text;
+                localStorage.setItem('bcastText', text);
+                document.getElementById('bcastTextModal').classList.remove('active');
+                showToast('口播文案已保存');
+            }
+
+            function downloadBcastText() {
+                const text = document.getElementById('bcastTextArea').value;
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'broadcast.txt';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            function openAnswerTextModal() {
+                const modal = document.getElementById('answerTextModal');
+                const ta = document.getElementById('answerTextArea');
+                if (ta) ta.value = state.answerText;
+                modal.classList.add('active');
+                modal.onclick = function(e) {
+                    if (e.target === modal) modal.classList.remove('active');
+                };
+            }
+
+            function saveAnswerText() {
+                const text = document.getElementById('answerTextArea').value;
+                state.answerText = text;
+                localStorage.setItem('answerText', text);
+                document.getElementById('answerTextModal').classList.remove('active');
+                showToast('问答文案已保存');
+            }
+
+            function downloadAnswerText() {
+                const text = document.getElementById('answerTextArea').value;
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'answer.txt';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            // ==================== KNOWLEDGE BASE ====================
+            function openKB() {
+                kbActiveTab = 'bcast-audio';
+                kbEditState = {};
+                $kbTabs.querySelectorAll('.kb-tab').forEach(t => t.classList.remove('active'));
+                const firstTab = $kbTabs.querySelector('[data-tab="bcast-audio"]');
+                if (firstTab) firstTab.classList.add('active');
+                renderKBContent();
+                $kbModal.classList.add('active');
+                updateStatsDisplay();
+
+                // Tab click handlers
+                $kbTabs.querySelectorAll('.kb-tab').forEach(tab => {
+                    tab.onclick = () => {
+                        $kbTabs.querySelectorAll('.kb-tab').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        kbActiveTab = tab.dataset.tab;
+                        kbEditState = {};
+                        renderKBContent();
+                    };
+                });
+            }
+
+            function switchKBTab(tabName) {
+                kbEditState = {};
+                $kbTabs.querySelectorAll('.kb-tab').forEach(t => t.classList.remove('active'));
+                const targetTab = $kbTabs.querySelector(`[data-tab="${tabName}"]`);
+                if (targetTab) targetTab.classList.add('active');
+                kbActiveTab = tabName;
+                renderKBContent();
+            }
+
+            function closeKB() {
+                $kbModal.classList.remove('active');
+                kbEditState = {};
+            }
+
+            function renderKBContent() {
+                switch (kbActiveTab) {
+                    case 'broadcast': return renderBroadcastKB();
+                    case 'rules': return renderReplyRulesKB();
+                    case 'auto-generate': return renderAutoGenerateKB();
+                    case 'bcast-audio': return renderBroadcastAudioLogKB();
+                    case 'reply-audio': return renderReplyAudioLogKB();
+                }
+            }
+
+            // ===== BROADCAST KB =====
+            function renderBroadcastKB() {
+                let html = `<div class="kb-add-bar">
+                    <input type="text" id="kbBcastInput" placeholder="输入口播文案…" onkeydown="if(event.key==='Enter')app.addBroadcastKB()">
+                    <select id="kbBcastCategory">
+                        <option value="开场">开场</option><option value="产品介绍">产品介绍</option>
+                        <option value="促销">促销</option><option value="结束">结束</option>
+                        <option value="其他">其他</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="app.addBroadcastKB()">＋ 新增</button>
+                </div><div class="kb-list">`;
+
+                if (state.broadcastKB.length === 0) {
+                    html += `<div class="kb-empty">暂无口播话术，请添加</div>`;
+                } else {
+                    state.broadcastKB.forEach(item => {
+                        const isEditing = kbEditState.id === item.id && kbEditState.type === 'broadcast';
+                        html += `<div class="kb-item">
+                            <div class="kb-item-main">`;
+                        if (isEditing) {
+                            html += `<textarea class="kb-edit-area" id="kbBcastEdit_${item.id}">${escHtml(item.text)}</textarea>`;
+                        } else {
+                            html += `<div class="kb-item-text">${escHtml(item.text.length > 60 ? item.text.slice(0, 60) + '…' : item.text)}</div>`;
+                        }
+                        html += `<div class="kb-item-meta">
+                            <span class="kb-meta-tag kb-meta-category">${escHtml(item.category)}</span>
+                            ${item.file ? `<span class="kb-meta-tag kb-meta-file">📁 ${escHtml(item.file)}</span>` : `<span class="kb-meta-tag kb-meta-file missing">⚠ 音频待生成</span>`}
+                        </div></div>
+                        <div class="kb-item-actions">`;
+                        if (item.file) {
+                            html += `<button class="btn-sm btn-audio" id="kbAudio_${item.id}" onclick="app.previewAudio('${escAttr(item.file)}', 'kbAudio_${item.id}')"><svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg></button>`;
+                        }
+                        if (isEditing) {
+                            html += `<button class="btn-sm btn-primary" onclick="app.saveBroadcastKBEdit('${item.id}')">💾 保存</button>`;
+                            html += `<button class="btn-sm btn-cancel" onclick="app.cancelKBEdit()">取消</button>`;
+                        } else {
+                            html += `<button class="btn-sm" onclick="app.editBroadcastKB('${item.id}')">✎</button>`;
+                            html += `<button class="btn-sm btn-danger" onclick="app.deleteBroadcastKB('${item.id}')">✕</button>`;
+                            html += `<button class="btn-sm btn-use" onclick="app.useFromKB('${item.id}')">▶ 使用</button>`;
+                        }
+                        html += `</div></div>`;
+                    });
+                }
+                html += `</div>`;
+                $kbContent.innerHTML = html;
+            }
+
+            function addBroadcastKB() {
+                const input = document.getElementById('kbBcastInput');
+                const sel = document.getElementById('kbBcastCategory');
+                if (!input || !input.value.trim()) return;
+                state.broadcastKB.push({
+                    id: genKBId(),
+                    text: input.value.trim(),
+                    file: '',
+                    category: sel ? sel.value : '其他'
+                });
+                input.value = '';
+                renderBroadcastKB();
+            }
+
+            function useFromKB(id) {
+                const item = state.broadcastKB.find(k => k.id === id);
+                if (!item) return;
+                const playItem = { text: item.text, file: item.file || '' };
+                ensureTTSFile(playItem);
+                if (state.playingIdx >= 0) {
+                    state.playlist.splice(state.playingIdx + 1, 0, playItem);
+                    if (state.liveActive && !state.paused) {
+                        startPlaying(state.playingIdx + 1);
+                    }
+                } else {
+                    state.playlist.push(playItem);
+                    if (state.liveActive && !state.paused) {
+                        startPlaying(state.playlist.length - 1);
+                    }
+                }
+                // Log to audio history
+                state.broadcastAudioLog.push({
+                    id: genKBId(),
+                    text: item.text,
+                    file: playItem.file,
+                    time: new Date().toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                });
+            }
+
+            function editBroadcastKB(id) {
+                kbEditState = { id, type: 'broadcast' };
+                renderBroadcastKB();
+                setTimeout(() => {
+                    const ta = document.getElementById(`kbBcastEdit_${id}`);
+                    if (ta) ta.focus();
+                }, 100);
+            }
+
+            function saveBroadcastKBEdit(id) {
+                const ta = document.getElementById(`kbBcastEdit_${id}`);
+                if (!ta || !ta.value.trim()) return;
+                const item = state.broadcastKB.find(k => k.id === id);
+                if (!item) return;
+                const textChanged = item.text !== ta.value.trim();
+                item.text = ta.value.trim();
+                if (textChanged && item.file) {
+                    item.file = '';
+                }
+                kbEditState = {};
+                renderBroadcastKB();
+            }
+
+            function cancelKBEdit() {
+                kbEditState = {};
+                renderKBContent();
+            }
+
+            function deleteBroadcastKB(id) {
+                if (!confirm('确定要删除这条口播话术吗？')) return;
+                state.broadcastKB = state.broadcastKB.filter(k => k.id !== id);
+                renderBroadcastKB();
+            }
+
+            // ===== REPLY RULES KB =====
+            function renderReplyRulesKB() {
+                let html = `<div class="kb-add-bar">
+                    <button class="btn btn-primary btn-sm" onclick="app.showAddRuleModal()">＋ 新增回复规则</button>
+                    <span style="font-size:11px;color:var(--text-muted);">点击添加「问题 : 答案」自动生成匹配规则</span>
+                </div><div class="kb-list">`;
+
+                if (state.replyRules.length === 0) {
+                    html += `<div class="kb-empty">暂无回复规则</div>`;
+                } else {
+                    state.replyRules.forEach((rule, ri) => {
+                        const isEditing = kbEditState.id === rule.id && kbEditState.type === 'rule';
+                        html += `<div class="kb-item">
+                            <div class="kb-item-main">`;
+                        if (isEditing) {
+                            html += `<div style="display:flex;flex-direction:column;gap:6px;">`;
+                            html += `<input type="text" id="kbRuleKW_${rule.id}" value="${escAttr(rule.keywords.join(', '))}" placeholder="关键词，逗号分隔" class="kb-edit-area" style="min-height:32px;">`;
+                            html += `<input type="text" id="kbRuleCat_${rule.id}" value="${escAttr(rule.category)}" placeholder="分类" class="kb-edit-area" style="min-height:32px;">`;
+                            html += `<input type="text" id="kbRuleFile_${rule.id}" value="${escAttr(rule.ttsFile)}" placeholder="TTS文件名" class="kb-edit-area" style="min-height:32px;">`;
+                            html += `<div style="font-size:11px;color:var(--text-muted);">回复文案（一行一条）：</div>`;
+                            html += `<textarea id="kbRuleReplies_${rule.id}" class="kb-edit-area" style="min-height:80px;">${escHtml(rule.replies.join('\n'))}</textarea>`;
+                            html += `</div>`;
+                        } else {
+                            html += `<div class="kb-item-text" style="font-weight:600;">${escHtml(rule.category)}</div>`;
+                            html += `<div class="kb-item-meta">`;
+                            html += rule.keywords.map(k => `<span class="kb-meta-tag">${escHtml(k)}</span>`).join('');
+                            html += `</div>`;
+                            html += `<div class="kb-replies-list">`;
+                            rule.replies.forEach(r => { html += `<div class="kb-reply-line">${escHtml(r.length > 50 ? r.slice(0, 50) + '…' : r)}</div>`; });
+                            html += `</div>`;
+                            html += `<div class="kb-item-meta"><span class="kb-meta-tag kb-meta-file">📁 ${escHtml(rule.ttsFile)}</span></div>`;
+                        }
+                        html += `</div><div class="kb-item-actions">`;
+                        if (rule.ttsFile) {
+                            html += `<button class="btn-sm btn-audio" id="kbAudio_${rule.id}" onclick="app.previewAudio('${escAttr(rule.ttsFile)}', 'kbAudio_${rule.id}')"><svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg></button>`;
+                        }
+                        if (isEditing) {
+                            html += `<button class="btn-sm btn-primary" onclick="app.saveReplyRuleEdit('${rule.id}')">💾 保存</button>`;
+                            html += `<button class="btn-sm btn-cancel" onclick="app.cancelKBEdit()">取消</button>`;
+                        } else {
+                            html += `<button class="btn-sm" onclick="app.editReplyRule('${rule.id}')">✎</button>`;
+                            html += `<button class="btn-sm btn-danger" onclick="app.deleteReplyRule('${rule.id}')">✕</button>`;
+                        }
+                        html += `</div></div>`;
+                    });
+                }
+                html += `</div>`;
+                $kbContent.innerHTML = html;
+            }
+
+            function showAddRuleModal() {
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay active';
+                modal.id = 'addRuleModal';
+                modal.innerHTML = `
+                    <div class="modal" style="width: 520px; max-height: 70vh; display: flex; flex-direction: column;">
+                        <h3>＋ 新增回复规则</h3>
+                        <div style="flex:1;display:flex;flex-direction:column;gap:12px;padding:4px 0;">
+                            <div style="font-size:12px;color:var(--text-muted);">输入「问题 : 答案」→ 自动扩展匹配关键词，弹幕命中即自动回复</div>
+                            <textarea id="addRuleTextarea" placeholder="例如：&#10;运费险: 咱们家所有订单都有运费险，放心拍，不满意可以退，来回运费我们承担" rows="5" style="width:100%;padding:10px 12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;font-family:inherit;line-height:1.6;resize:vertical;outline:none;"></textarea>
+                            <div style="font-size:11px;color:var(--text-muted);">输入后系统会自动扩展匹配关键词，如「运费险」→ 有运费险吗、有没有运费险、订单买了运费险吗 等</div>
+                        </div>
+                        <div class="modal-actions" style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+                            <button class="btn btn-cancel" onclick="document.getElementById('addRuleModal').remove()">取消</button>
+                            <button class="btn btn-primary" onclick="app.confirmAddRule()">确认新增</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                // Focus textarea and allow Ctrl+Enter to submit
+                setTimeout(() => {
+                    const ta = document.getElementById('addRuleTextarea');
+                    if (ta) {
+                        ta.focus();
+                        ta.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                                e.preventDefault();
+                                window.app.confirmAddRule();
+                            }
+                        });
+                    }
+                }, 100);
+            }
+
+            function confirmAddRule() {
+                const modal = document.getElementById('addRuleModal');
+                const textEl = document.getElementById('addRuleTextarea');
+                if (!textEl || !textEl.value.trim()) {
+                    alert('请输入内容，格式：问题 : 答案');
+                    return;
+                }
+
+                const text = textEl.value.trim();
+                const match = text.match(/^(.+?)\s*[:：]\s*(.+)$/s);
+                if (!match) {
+                    alert('格式错误，请使用：问题 : 答案描述\n\n例如：运费险: 咱们家所有订单都有运费险，放心拍…');
+                    return;
+                }
+
+                const category = match[1].trim();
+                const description = match[2].trim();
+                const keywords = expandQuestionKeywords(category);
+
+                if (keywords.length === 0) {
+                    alert('无法从该问题中提取有效关键词，请换一种描述');
+                    return;
+                }
+
+                const newRule = {
+                    id: genKBId(),
+                    keywords: keywords,
+                    category: category,
+                    replies: [description],
+                    ttsFile: category.replace(/[^\u4e00-\u9fa5\w]/g, '') + '.pcm'
+                };
+                state.replyRules.push(newRule);
+                rebuildKeywordIndex();
+                
+                if (modal) modal.remove();
+                renderReplyRulesKB();
+            }
+
+            function editReplyRule(id) {
+                kbEditState = { id, type: 'rule' };
+                renderReplyRulesKB();
+            }
+
+            function saveReplyRuleEdit(id) {
+                const rule = state.replyRules.find(r => r.id === id);
+                if (!rule) return;
+                const kwEl = document.getElementById(`kbRuleKW_${id}`);
+                const catEl = document.getElementById(`kbRuleCat_${id}`);
+                const fileEl = document.getElementById(`kbRuleFile_${id}`);
+                const repliesEl = document.getElementById(`kbRuleReplies_${id}`);
+                if (!kwEl || !catEl || !fileEl || !repliesEl) return;
+
+                const newKW = kwEl.value.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+                const newCat = catEl.value.trim() || '新分类';
+                const newFile = fileEl.value.trim() || '新规则.pcm';
+                const newReplies = repliesEl.value.split('\n').map(s => s.trim()).filter(Boolean);
+
+                if (newKW.length === 0 || newReplies.length === 0) {
+                    alert('关键词和回复文案不能为空');
+                    return;
+                }
+
+                const textChanged = rule.category !== newCat || JSON.stringify(rule.replies) !== JSON.stringify(newReplies);
+                rule.keywords = newKW;
+                rule.category = newCat;
+                rule.replies = newReplies;
+                if (textChanged) {
+                    rule.ttsFile = '';
+                } else {
+                    rule.ttsFile = newFile;
+                }
+                rebuildKeywordIndex();
+                kbEditState = {};
+                renderReplyRulesKB();
+            }
+
+            function deleteReplyRule(id) {
+                if (!confirm('确定要删除这条回复规则吗？')) return;
+                state.replyRules = state.replyRules.filter(r => r.id !== id);
+                rebuildKeywordIndex();
+                renderReplyRulesKB();
+            }
+
+            // ===== AUDIO LOGS =====
+            function renderBroadcastAudioLogKB() {
+                let html = `<div class="kb-list">`;
+                if (state.broadcastAudioLog.length === 0) {
+                    html += `<div class="kb-empty">暂无口播音频记录</div>`;
+                } else {
+                    [...state.broadcastAudioLog].reverse().forEach(item => {
+                        html += `<div class="kb-item">
+                            <div class="kb-item-main">
+                                <div class="kb-item-text">${escHtml(item.text.length > 60 ? item.text.slice(0, 60) + '…' : item.text)}</div>
+                                <div class="kb-item-meta">
+                                    ${item.file ? `<span class="kb-meta-tag kb-meta-file">📁 ${escHtml(item.file)}</span>` : `<span class="kb-meta-tag kb-meta-file missing">⚠ 无音频</span>`}
+                                    <span class="kb-meta-time">${escHtml(item.time)}</span>
+                                </div>
+                            </div>
+                            <div class="kb-item-actions">
+                                ${item.file ? `<button class="btn-sm btn-audio" id="kbAudio_${item.id}" onclick="app.previewAudio('${escAttr(item.file)}', 'kbAudio_${item.id}')"><svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg></button>` : ''}
+                                <button class="btn-sm btn-danger" onclick="app.deleteBroadcastAudio('${item.id}')">✕</button>
+                            </div>
+                        </div>`;
+                    });
+                }
+                html += `</div>`;
+                $kbContent.innerHTML = html;
+            }
+
+            function renderReplyAudioLogKB() {
+                let html = `<div class="kb-list">`;
+                if (state.replyAudioLog.length === 0) {
+                    html += `<div class="kb-empty">暂无回复音频记录</div>`;
+                } else {
+                    [...state.replyAudioLog].reverse().forEach(item => {
+                        html += `<div class="kb-item">
+                            <div class="kb-item-main">
+                                ${item.danmakuText ? `<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">弹幕：${escHtml(item.danmakuText)}</div>` : ''}
+                                <div class="kb-item-text">${escHtml(item.text.length > 60 ? item.text.slice(0, 60) + '…' : item.text)}</div>
+                                <div class="kb-item-meta">
+                                    ${item.file ? `<span class="kb-meta-tag kb-meta-file">📁 ${escHtml(item.file)}</span>` : `<span class="kb-meta-tag kb-meta-file missing">⚠ 无音频</span>`}
+                                    <span class="kb-meta-time">${escHtml(item.time)}</span>
+                                </div>
+                            </div>
+                            <div class="kb-item-actions">
+                                ${item.file ? `<button class="btn-sm btn-audio" id="kbAudio_${item.id}" onclick="app.previewAudio('${escAttr(item.file)}', 'kbAudio_${item.id}')"><svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg></button>` : ''}
+                                <button class="btn-sm btn-danger" onclick="app.deleteReplyAudio('${item.id}')">✕</button>
+                            </div>
+                        </div>`;
+                    });
+                }
+                html += `</div>`;
+                $kbContent.innerHTML = html;
+            }
+
+            function deleteBroadcastAudio(id) {
+                if (!confirm('确定要删除这条口播音频记录吗？')) return;
+                state.broadcastAudioLog = state.broadcastAudioLog.filter(a => a.id !== id);
+                renderBroadcastAudioLogKB();
+            }
+
+            function deleteReplyAudio(id) {
+                if (!confirm('确定要删除这条回复音频记录吗？')) return;
+                state.replyAudioLog = state.replyAudioLog.filter(a => a.id !== id);
+                renderReplyAudioLogKB();
+            }
+
+            // ===== AUDIO PREVIEW =====
+            let kbAudioPlayer = null;
+            let kbAudioPlayingBtnId = null;
+            const ICON_PLAY  = '<svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg>';
+            const ICON_PAUSE = '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+
+            function resetAudioBtn(btn) {
+                btn.classList.remove('playing');
+                btn.innerHTML = ICON_PLAY;
+            }
+
+            function previewAudio(filename, btnId) {
+                const btn = document.getElementById(btnId);
+                if (!btn) return;
+
+                // If clicking the already-playing button → pause
+                if (kbAudioPlayingBtnId === btnId && kbAudioPlayer && !kbAudioPlayer.paused) {
+                    kbAudioPlayer.pause();
+                    resetAudioBtn(btn);
+                    kbAudioPlayer = null;
+                    kbAudioPlayingBtnId = null;
+                    return;
+                }
+
+                // Stop any previous playback
+                if (kbAudioPlayer) { kbAudioPlayer.pause(); kbAudioPlayer = null; }
+                if (kbAudioPlayingBtnId) {
+                    const prevBtn = document.getElementById(kbAudioPlayingBtnId);
+                    if (prevBtn) resetAudioBtn(prevBtn);
+                    kbAudioPlayingBtnId = null;
+                }
+
+                // Start new playback
+                kbAudioPlayingBtnId = btnId;
+                btn.classList.add('playing');
+                btn.innerHTML = ICON_PAUSE;
+
+                try {
+                    kbAudioPlayer = new Audio();
+                    kbAudioPlayer.src = 'data:audio/wav;base64,' + btoa('RIFF....'); // 实际生产环境替换为真实音频URL
+                    kbAudioPlayer.play().catch(() => {});
+                    kbAudioPlayer.onended = () => { resetAudioBtn(btn); kbAudioPlayer = null; kbAudioPlayingBtnId = null; };
+                    kbAudioPlayer.onerror = () => {
+                        // No actual audio file – simulate playback duration
+                        setTimeout(() => {
+                            resetAudioBtn(btn);
+                            kbAudioPlayer = null;
+                            kbAudioPlayingBtnId = null;
+                        }, 2000);
+                    };
+                    // Fallback
+                    setTimeout(() => {
+                        if (kbAudioPlayer && kbAudioPlayer.paused && kbAudioPlayingBtnId === btnId) {
+                            resetAudioBtn(btn);
+                            kbAudioPlayer = null;
+                            kbAudioPlayingBtnId = null;
+                        }
+                    }, 300);
+                } catch (e) {
+                    resetAudioBtn(btn);
+                    kbAudioPlayingBtnId = null;
+                }
+            }
+
+            // ===== TTS AUTO GENERATION =====
+            function ensureTTSFile(item) {
+                if (!item.file) {
+                    const short = item.text.replace(/[^\u4e00-\u9fa5\w]/g, '').slice(0, 6);
+                    item.file = (short || '口播文案') + '.pcm';
+                    // In production: call 火山 TTS API here
+                    // const resp = await callHuoshanTTS(item.text);
+                    // item.file = resp.filename;
+                }
+            }
+
+            // ==================== AI GENERATION ====================
+            function renderAutoGenerateKB() {
+                let html = `<div class="ai-generator">
+                    <div class="ai-section">
+                        <h4><span class="icon">🎤</span> 口播文案自动生成</h4>
+                        <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">粘贴别人直播间话术模板 → AI自动切片洗稿 → 加入口播库循环播放</p>
+                        <div class="ai-input-group">
+                            <div class="ai-input-label">📋 话术模板（别人直播间在播的文案）</div>
+                            <textarea class="ai-textarea-large" id="aiScriptInput" placeholder="粘贴一段别人直播间的话术，例如：哈喽各位直播间的小伙伴，今天给大家推荐一款特别好用的产品……" rows="6"></textarea>
+                        </div>
+                        <div class="ai-input-group">
+                            <div class="ai-input-label">📦 产品信息（直播间单品描述）</div>
+                            <textarea class="ai-textarea-large" id="aiProductInput" placeholder="描述你直播间卖的产品，例如：无线蓝牙耳机，续航8小时，重量200g，支持快充，售价199元，送配件大礼包……" rows="3"></textarea>
+                        </div>
+                        <div class="ai-controls">
+                            <button class="ai-btn" onclick="app.generateBroadcastScripts()" id="btnGenerateScripts" ${state.aiGenerating ? 'disabled' : ''}>
+                                ${state.aiGenerating ? '<span class="ai-spinner"></span> 生成中…' : '✨ 自动切片洗稿 生成口播'}
+                            </button>
+                            <button class="ai-btn ai-btn-secondary" onclick="app.addAllToQueue()">▶ 全部加入播放</button>
+                            <button class="ai-btn ai-btn-secondary" onclick="app.clearGeneratedBroadcasts()">🗑️ 清空</button>
+                        </div>
+                    </div>
+
+                    <div class="ai-section">
+                        <h4><span class="icon">❓</span> 弹幕问答自动匹配</h4>
+                        <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">输入问答对 → 自动扩展匹配词 → 弹幕命中时自动回复</p>
+                        <div class="ai-input-group">
+                            <div class="ai-input-label">💬 问答知识库（每行格式：问题 : 答案话术）</div>
+                            <textarea class="ai-textarea-large" id="aiRuleInput" placeholder="例如：
+发货时间: 今天下单现在就给您安排发货，最快当天就可以发走
+运费险: 咱们家所有订单都有运费险，放心拍，不满意可以退，来回运费我们承担
+售后: 支持7天无理由退货，30天质量问题包换
+怎么使用: 非常简单，开机即用，我们还赠送详细教程视频
+优惠活动: 今天下单立减50元，前50名还送价值99元赠品大礼包" rows="8"></textarea>
+                        </div>
+                        <div class="ai-controls">
+                            <button class="ai-btn" onclick="app.generateReplyRules()" id="btnGenerateRules" ${state.aiGenerating ? 'disabled' : ''}>
+                                ${state.aiGenerating ? '<span class="ai-spinner"></span> 生成中…' : '✨ 自动生成匹配规则'}
+                            </button>
+                            <button class="ai-btn ai-btn-secondary" onclick="app.clearGeneratedRules()">🗑️ 清空</button>
+                        </div>
+                        <div id="aiRuleStatus" class="ai-status" style="display: none;"></div>
+                    </div>`;
+
+                // Show generated broadcast scripts
+                if (state.aiGeneratedBroadcasts.length > 0) {
+                    html += `<div class="ai-results">
+                        <h4 style="font-size:13px;margin-bottom:12px;color:var(--text-primary);">📋 生成的口播文案</h4>`;
+                    state.aiGeneratedBroadcasts.forEach((item, idx) => {
+                        html += `<div class="ai-result-item">
+                            <div class="ai-result-header">
+                                <div class="ai-result-title">片段 ${idx + 1} - ${item.category}</div>
+                                <div class="ai-result-actions">
+                                    <button class="btn-sm btn-ai" onclick="app.addGeneratedBroadcast(${idx})">➕ 加入口播库</button>
+                                    <button class="btn-sm" onclick="app.addToQueueFromAI(${idx})">▶ 加入队列</button>
+                                </div>
+                            </div>
+                            <div class="ai-result-text">${escHtml(item.text)}</div>
+                            <div class="ai-result-meta">
+                                <span class="ai-result-category">${escHtml(item.category)}</span>
+                                <span style="color:var(--text-muted);font-size:11px;">字数：${item.text.length}</span>
+                            </div>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                }
+
+                // Show generated reply rules
+                if (state.aiGeneratedRules.length > 0) {
+                    html += `<div class="ai-results" style="margin-top: 24px;">
+                        <h4 style="font-size:13px;margin-bottom:12px;color:var(--text-primary);">🎯 生成的问答规则</h4>`;
+                    state.aiGeneratedRules.forEach((rule, idx) => {
+                        html += `<div class="ai-result-item">
+                            <div class="ai-result-header">
+                                <div class="ai-result-title">${escHtml(rule.category)}</div>
+                                <div class="ai-result-actions">
+                                    <button class="btn-sm btn-ai" onclick="app.addGeneratedRule(${idx})">➕ 加入规则库</button>
+                                </div>
+                            </div>
+                            <div class="ai-result-keywords">
+                                ${rule.keywords.map(k => `<span class="ai-kw-tag">${escHtml(k)}</span>`).join('')}
+                            </div>
+                            <div class="ai-result-text">${escHtml(rule.replies.join('\n'))}</div>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                }
+
+                if (state.aiGeneratedBroadcasts.length === 0 && state.aiGeneratedRules.length === 0) {
+                    html += `<div class="ai-empty">
+                        <div style="font-size:36px;opacity:0.4;margin-bottom:12px;">🤖</div>
+                        <div>使用AI自动生成口播文案和问答规则</div>
+                        <div style="font-size:12px;margin-top:8px;color:var(--text-muted);">输入外部话术或问题描述，AI会自动分析并生成相关内容</div>
+                    </div>`;
+                }
+
+                html += `</div>`;
+                $kbContent.innerHTML = html;
+                
+                // Update progress bar
+                const progressBar = document.getElementById('aiProgress');
+                const progressFill = progressBar ? progressBar.querySelector('.ai-progress-fill') : null;
+                if (progressBar && progressFill) {
+                    progressBar.style.display = state.aiGenerating ? 'flex' : 'none';
+                    progressFill.style.width = state.aiProgress + '%';
+                    if (progressBar.nextElementSibling) {
+                        progressBar.nextElementSibling.textContent = state.aiProgress + '%';
+                    }
+                }
+            }
+
+            function generateBroadcastScripts() {
+                const scriptEl = document.getElementById('aiScriptInput');
+                const productEl = document.getElementById('aiProductInput');
+                if (!scriptEl || !scriptEl.value.trim()) {
+                    alert('请先粘贴话术模板');
+                    return;
+                }
+
+                const scriptText = scriptEl.value.trim();
+                const productInfo = productEl ? productEl.value.trim() : '';
+
+                state.aiGenerating = true;
+                state.aiProgress = 0;
+                state.aiGeneratedBroadcasts = [];
+                renderAutoGenerateKB();
+
+                const interval = setInterval(() => {
+                    state.aiProgress += Math.random() * 15;
+                    if (state.aiProgress > 100) {
+                        state.aiProgress = 100;
+                        clearInterval(interval);
+                        
+                        const generated = generateBroadcastFromScript(scriptText, productInfo);
+                        state.aiGeneratedBroadcasts = generated;
+                        state.aiGenerating = false;
+                        state.stats.aiGeneratedCount += generated.length;
+                        renderAutoGenerateKB();
+                    } else {
+                        renderAutoGenerateKB();
+                    }
+                }, 300);
+            }
+
+            function addAllToQueue() {
+                if (state.aiGeneratedBroadcasts.length === 0) {
+                    alert('请先生成口播文案');
+                    return;
+                }
+                state.aiGeneratedBroadcasts.forEach((item, idx) => {
+                    if (!item.text) return;
+                    const playItem = { text: item.text, file: '' };
+                    ensureTTSFile(playItem);
+                    state.playlist.push(playItem);
+                    // Also add to broadcastKB
+                    state.broadcastKB.push({
+                        id: genKBId(),
+                        text: item.text,
+                        file: playItem.file,
+                        category: item.category || '产品介绍'
+                    });
+                    state.broadcastAudioLog.push({
+                        id: genKBId(),
+                        text: item.text,
+                        file: playItem.file,
+                        time: new Date().toLocaleString('zh-CN', { month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit' })
+                    });
+                });
+                renderAll();
+                if (state.liveActive && !state.paused && state.playingIdx < 0 && state.playlist.length > 0) startPlaying(0);
+                alert(`已添加 ${state.aiGeneratedBroadcasts.length} 条口播到播放队列`);
+            }
+
+            function generateBroadcastFromScript(text, productInfo) {
+                // 高级智能切片算法 - 模拟真实直播场景
+                const results = [];
+                
+                // 直播场景分类库
+                const categoryPatterns = {
+                    '开场互动': [
+                        '欢迎', '大家好', '欢迎来到', '新来的', '小伙伴', '宝宝们', '亲们', '老铁',
+                        '点个关注', '关注一下', '点赞', '分享', '直播间'
+                    ],
+                    '产品介绍': [
+                        '产品', '这款', '这个', '东西', '宝贝', '商品', '物品', '款式',
+                        '材质', '用料', '做工', '质量', '品质', '品牌'
+                    ],
+                    '功能特点': [
+                        '功能', '特点', '优势', '特色', '卖点', '亮点', '好用', '实用',
+                        '方便', '便捷', '简单', '轻松', '智能', '强大', '高效'
+                    ],
+                    '使用场景': [
+                        '可以用在', '适合', '场景', '场合', '情况下', '时候', '地方',
+                        '家里', '办公室', '户外', '旅行', '送礼', '自用'
+                    ],
+                    '优惠促销': [
+                        '优惠', '折扣', '降价', '活动', '促销', '福利', '特价', '价格',
+                        '便宜', '划算', '性价比', '立减', '满减', '赠品', '送'
+                    ],
+                    '售后服务': [
+                        '售后', '服务', '保障', '保修', '退货', '换货', '退款', '运费',
+                        '无忧', '放心', '承诺', '保证', '质量保证', '售后保障'
+                    ],
+                    '发货物流': [
+                        '发货', '快递', '物流', '配送', '送达', '时效', '时间', '几天',
+                        '速度', '快递公司', '包邮', '运费', '偏远地区'
+                    ],
+                    '用户评价': [
+                        '评价', '好评', '用户说', '买家说', '反馈', '评论', '体验',
+                        '感受', '效果', '真实评价', '口碑', '推荐'
+                    ],
+                    '催单逼单': [
+                        '抓紧', '赶紧', '快点', '不要错过', '库存', '不多', '限量',
+                        '最后', '机会', '错过', '没了', '秒杀', '抢购', '拼手速'
+                    ],
+                    '感谢结束': [
+                        '感谢', '谢谢', '再见', '明天见', '下次见', '拜拜', '下播',
+                        '结束了', '感谢支持', '感谢观看', '感谢陪伴'
+                    ]
+                };
+                
+                // 更智能的分句算法 - 考虑中文标点完整性
+                const sentences = [];
+                let currentSentence = '';
+                for (let i = 0; i < text.length; i++) {
+                    const char = text[i];
+                    currentSentence += char;
+                    
+                    // 句子结束标志
+                    const isSentenceEnd = 
+                        (char === '。' || char === '！' || char === '？' || 
+                         char === '.' || char === '!' || char === '?' || 
+                         char === ';' || char === '；') ||
+                        (i > 0 && (char === '，' || char === ',') && currentSentence.length > 25);
+                    
+                    if (isSentenceEnd || i === text.length - 1) {
+                        const trimmed = currentSentence.trim();
+                        if (trimmed.length >= 6) {
+                            sentences.push(trimmed);
+                        }
+                        currentSentence = '';
+                    }
+                }
+                
+                // 如果没有合适的分句，使用简单分句
+                if (sentences.length === 0) {
+                    sentences.push(...text.split(/[。！？.!?;；]/).filter(s => s.trim().length > 5));
+                }
+                
+                // 直播话术转换库
+                const rewordingMap = {
+                    // 产品相关
+                    '产品': ['这款宝贝', '这个产品', '这个好物', '这个神器', '这款好物'],
+                    '商品': ['宝贝', '好物', '单品', '货品', '这款'],
+                    '东西': ['宝贝', '好物', '产品', '神器', '单品'],
+                    
+                    // 功能相关
+                    '可以': ['能够', '可以', '可以做到', '能', '能够实现'],
+                    '帮助': ['帮到', '协助', '帮助到', '解决', '搞定'],
+                    '解决': ['处理', '搞定', '解决掉', '应对', '处理掉'],
+                    '功能': ['功能', '用途', '作用', '用处', '功效'],
+                    '特点': ['特色', '卖点', '亮点', '优势', '特点'],
+                    
+                    // 质量评价
+                    '很好': ['很不错', '非常好', '特别棒', '相当不错', '非常出色'],
+                    '不错': ['很好', '挺不错', '相当好', '还可以', '不错'],
+                    '特别': ['非常', '格外', '尤其', '特别', '相当'],
+                    '非常': ['特别', '非常', '极其', '十分', '相当'],
+                    
+                    // 价格相关
+                    '价格': ['价位', '价格', '价钱', '售价', '定价'],
+                    '优惠': ['折扣', '福利', '优惠', '特价', '活动价'],
+                    '便宜': ['划算', '实惠', '性价比高', '价格美丽', '价格实惠'],
+                    
+                    // 直播专用语
+                    '大家': ['小伙伴们', '宝宝们', '亲们', '老铁们', '朋友们'],
+                    '我们': ['我们', '咱们', '咱家', '我们店铺', '我们直播间'],
+                    '现在': ['现在', '此时此刻', '马上', '立刻', '现在马上'],
+                    '下单': ['下单', '拍下', '购买', '带走', '入手'],
+                };
+                
+                // 直播语气词库
+                const livePhrases = [
+                    '哦～', '哦～', '哦～',
+                    '感兴趣的小伙伴可以关注一下哦～',
+                    '现在下单还有额外惊喜！',
+                    '抓紧时间，数量有限！',
+                    '错过今天就没这个价格了！',
+                    '想要的宝宝们赶紧下手！',
+                    '这款真的超级好用！',
+                    '我已经回购了好几次！',
+                    '直播间专属福利！',
+                    '今天下单还有赠品送！',
+                    '包邮到家，售后无忧！',
+                    '7天无理由退换货！',
+                    '质量有问题我们承担来回运费！',
+                    '相信我，买它不会错！',
+                    '这款我已经用了一个月了！',
+                    '真的是良心推荐！',
+                    '不会让你们失望的！',
+                    '买到就是赚到！'
+                ];
+                
+                sentences.forEach((sentence, idx) => {
+                    const trimmed = sentence.trim();
+                    if (trimmed.length < 8) return;
+                    
+                    // 智能分类判断
+                    let category = '产品介绍';
+                    let maxScore = 0;
+                    
+                    for (const [cat, patterns] of Object.entries(categoryPatterns)) {
+                        let score = 0;
+                        for (const pattern of patterns) {
+                            if (trimmed.includes(pattern)) {
+                                score += 2;
+                            }
+                        }
+                        if (score > maxScore) {
+                            maxScore = score;
+                            category = cat;
+                        }
+                    }
+                    
+                    // 高级洗稿处理
+                    let processed = trimmed;
+                    
+                    // 1. 词汇替换
+                    for (const [original, replacements] of Object.entries(rewordingMap)) {
+                        if (processed.includes(original)) {
+                            const replacement = replacements[Math.floor(Math.random() * replacements.length)];
+                            processed = processed.replace(new RegExp(original, 'g'), replacement);
+                        }
+                    }
+                    
+                    // 2. 句式优化
+                    processed = optimizeSentence(processed);
+                    
+                    // 3. 添加直播语气词
+                    const shouldAddPhrase = Math.random() > 0.3;
+                    if (shouldAddPhrase) {
+                        const phrase = livePhrases[Math.floor(Math.random() * livePhrases.length)];
+                        
+                        // 根据句子结尾选择合适的连接方式
+                        const lastChar = processed[processed.length - 1];
+                        const isChinesePunct = lastChar === '。' || lastChar === '！' || lastChar === '？' || 
+                                               lastChar === '，' || lastChar === '；';
+                        
+                        if (isChinesePunct) {
+                            processed = processed.slice(0, -1) + '，' + phrase;
+                        } else {
+                            processed += '，' + phrase;
+                        }
+                    }
+                    
+                    // 4. 添加表情符号（随机）
+                    if (Math.random() > 0.7) {
+                        const emojis = ['❤️', '✨', '🔥', '💯', '👍', '🌟', '🎁', '💰'];
+                        const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                        processed += ' ' + emoji;
+                    }
+                    
+                    // 5. 添加语气词后缀
+                    const suffixChance = Math.random();
+                    if (suffixChance > 0.8) {
+                        processed += '～';
+                    } else if (suffixChance > 0.6) {
+                        processed += '！';
+                    } else if (suffixChance > 0.4) {
+                        processed += '哦';
+                    }
+                    
+                    results.push({
+                        text: processed,
+                        category: category,
+                        original: trimmed,
+                        confidence: Math.min(0.95, maxScore / 10 + 0.6), // 置信度评分
+                        lengthScore: Math.min(1, trimmed.length / 50) // 长度评分
+                    });
+                });
+                
+                // 按置信度排序并限制数量
+                return results
+                    .sort((a, b) => b.confidence - a.confidence)
+                    .slice(0, Math.min(12, results.length));
+                
+                // 句子优化函数
+                function optimizeSentence(sentence) {
+                    let result = sentence;
+                    
+                    // 去除重复词
+                    result = result.replace(/([^。！？.!?;；，,]+?)\1{2,}/g, '$1$1');
+                    
+                    // 优化过于冗长的句子
+                    if (result.length > 40) {
+                        // 尝试在适当位置添加停顿
+                        const punctuationPositions = [',', '，', '、', ';', '；'];
+                        let hasPunctuation = false;
+                        for (const punct of punctuationPositions) {
+                            if (result.includes(punct)) {
+                                hasPunctuation = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!hasPunctuation && result.length > 50) {
+                            // 在合适位置添加逗号
+                            const midPoint = Math.floor(result.length / 2);
+                            const lastSpace = result.lastIndexOf(' ', midPoint);
+                            if (lastSpace > 0) {
+                                result = result.slice(0, lastSpace) + '，' + result.slice(lastSpace + 1);
+                            }
+                        }
+                    }
+                    
+                    // 确保句子以标点结尾
+                    const lastChar = result[result.length - 1];
+                    const isProperEnd = lastChar === '。' || lastChar === '！' || lastChar === '？' || 
+                                      lastChar === '.' || lastChar === '!' || lastChar === '?';
+                    if (!isProperEnd) {
+                        result += '。';
+                    }
+                    
+                    return result;
+                }
+            }
+
+            function generateReplyRules() {
+                const inputEl = document.getElementById('aiRuleInput');
+                if (!inputEl || !inputEl.value.trim()) {
+                    alert('请输入问答知识库');
+                    return;
+                }
+
+                const text = inputEl.value.trim();
+                const lines = text.split('\n').filter(line => line.trim());
+                const rules = [];
+                
+                lines.forEach(line => {
+                    const match = line.match(/^(.+?)\s*[:：]\s*(.+)$/);
+                    if (match) {
+                        const category = match[1].trim();
+                        const description = match[2].trim();
+                        const rule = generateRuleFromDescription(category, description);
+                        if (rule) rules.push(rule);
+                    }
+                });
+                
+                if (rules.length > 0) {
+                    state.aiGeneratedRules = rules;
+                    const statusEl = document.getElementById('aiRuleStatus');
+                    if (statusEl) {
+                        statusEl.textContent = `✅ 成功生成了 ${rules.length} 条问答规则`;
+                        statusEl.style.display = 'block';
+                    }
+                    renderAutoGenerateKB();
+                } else {
+                    alert('未能识别到有效的规则描述。请使用格式：问题 : 答案');
+                }
+            }
+
+            function generateRuleFromDescription(category, description) {
+                // 从问题短语(category)自动扩展匹配关键词
+                const keywords = expandQuestionKeywords(category);
+                if (keywords.length === 0) return null;
+
+                // 回复就是答案描述本身
+                return {
+                    category: category,
+                    keywords: keywords,
+                    replies: [description],
+                    ttsFile: category.replace(/[^\u4e00-\u9fa5\w]/g, '') + '.pcm'
+                };
+            }
+
+            // 从问题短语自动扩展匹配关键词
+            function expandQuestionKeywords(question) {
+                const kw = new Set();
+                kw.add(question);
+
+                // 疑问词前缀/后缀
+                const prefixes = ['', '问一下', '请问', '想问', '想问下', '咨询'];
+                const suffixes = ['', '吗', '呢', '啊', '呀', '吧', '嘛'];
+
+                prefixes.forEach(p => {
+                    suffixes.forEach(s => {
+                        kw.add(p + question + s);
+                    });
+                });
+
+                // 拆词扩展：从问题短语中提取核心词，生成变体
+                const coreWords = extractCoreWords(question);
+                coreWords.forEach(word => {
+                    kw.add(word);
+                    // 疑问变体
+                    kw.add(word + '吗');
+                    kw.add(word + '呢');
+                    kw.add('有' + word + '吗');
+                    kw.add('有没有' + word);
+                    kw.add('有没有' + word + '呢');
+                    kw.add('有没有' + word + '啊');
+                    kw.add('有没' + word);
+                    kw.add('支持' + word + '吗');
+                    kw.add('可以' + word + '吗');
+                    kw.add('能' + word + '吗');
+                    kw.add('怎么' + word);
+                    kw.add('如何' + word);
+                    kw.add('怎样' + word);
+                    kw.add('什么' + word);
+                    kw.add('什么时候' + word);
+                    kw.add('几点' + word);
+                    kw.add('多少' + word);
+                    kw.add('多久' + word);
+                    kw.add('哪里' + word);
+                });
+
+                return Array.from(kw).filter(k => k.length >= 2).slice(0, 30);
+            }
+
+            // 从问题短语提取核心词
+            function extractCoreWords(question) {
+                const words = new Set();
+                // 2字词
+                for (let i = 0; i <= question.length - 2; i++) {
+                    words.add(question.substring(i, i + 2));
+                }
+                // 3字词
+                for (let i = 0; i <= question.length - 3; i++) {
+                    words.add(question.substring(i, i + 3));
+                }
+                return Array.from(words);
+            }
+
+            function clearGeneratedBroadcasts() {
+                state.aiGeneratedBroadcasts = [];
+                renderAutoGenerateKB();
+            }
+
+            function clearGeneratedRules() {
+                state.aiGeneratedRules = [];
+                renderAutoGenerateKB();
+            }
+
+            function addGeneratedBroadcast(index) {
+                if (index < 0 || index >= state.aiGeneratedBroadcasts.length) return;
+                const item = state.aiGeneratedBroadcasts[index];
+                
+                // 添加到口播知识库
+                const broadcastItem = {
+                    id: genKBId(),
+                    text: item.text,
+                    file: '',
+                    category: item.category
+                };
+                state.broadcastKB.push(broadcastItem);
+                
+                alert(`已添加到列表（${item.category}）`);
+                if (kbActiveTab === 'broadcast') {
+                    renderBroadcastKB();
+                }
+            }
+
+            function addGeneratedRule(index) {
+                if (index < 0 || index >= state.aiGeneratedRules.length) return;
+                const rule = state.aiGeneratedRules[index];
+                
+                // 添加到回复规则
+                const newRule = {
+                    id: genKBId(),
+                    keywords: rule.keywords,
+                    category: rule.category,
+                    replies: rule.replies,
+                    ttsFile: rule.ttsFile
+                };
+                state.replyRules.push(newRule);
+                rebuildKeywordIndex();
+                
+                alert(`已添加到列表（${rule.category}）`);
+                if (kbActiveTab === 'rules') {
+                    renderReplyRulesKB();
+                }
+            }
+
+            function addToQueueFromAI(index) {
+                if (index < 0 || index >= state.aiGeneratedBroadcasts.length) return;
+                const item = state.aiGeneratedBroadcasts[index];
+                
+                const playItem = { text: item.text, file: '' };
+                ensureTTSFile(playItem);
+                if (state.playingIdx >= 0) {
+                    state.playlist.splice(state.playingIdx + 1, 0, playItem);
+                    if (state.liveActive && !state.paused) {
+                        startPlaying(state.playingIdx + 1);
+                    }
+                } else {
+                    state.playlist.push(playItem);
+                    if (state.liveActive && !state.paused) {
+                        startPlaying(state.playlist.length - 1);
+                    }
+                }
+                
+                // 记录到口播历史
+                state.broadcastAudioLog.push({
+                    id: genKBId(),
+                    text: item.text,
+                    file: playItem.file,
+                    time: new Date().toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                });
+                
+                alert('已加入播放队列');
+            }
+
+            // Expose API
+            window.app = {
+                removeItem,
+                insertItem,
+                moveUp,
+                moveDown,
+                editItem,
+                toggleQueueExpand,
+                addToQueue,
+                openReply,
+                selectReplyOption,
+                onReplyInput,
+                sendReply,
+                polishReply,
+                openBcastTextModal,
+                saveBcastText,
+                downloadBcastText,
+                openAnswerTextModal,
+                saveAnswerText,
+                downloadAnswerText,
+                openKB,
+                closeKB,
+                switchKBTab,
+                addBroadcastKB,
+                deleteBroadcastKB,
+                editBroadcastKB,
+                saveBroadcastKBEdit,
+                cancelKBEdit,
+                useFromKB,
+                showAddRuleModal,
+                confirmAddRule,
+                deleteReplyRule,
+                editReplyRule,
+                saveReplyRuleEdit,
+                deleteBroadcastAudio,
+                deleteReplyAudio,
+                previewAudio,
+                // AI Generation functions
+                generateBroadcastScripts,
+                generateReplyRules,
+                clearGeneratedBroadcasts,
+                clearGeneratedRules,
+                addGeneratedBroadcast,
+                addGeneratedRule,
+                addToQueueFromAI,
+                // Automation functions
+                toggleLive,
+                pauseBroadcast,
+                autoReplyToggle,
+                showAnalytics,
+                getState: () => state
+            };
+
+            // ==================== BOOT ====================
+            initSampleData();
+        })();
+    </script>
+</body>
+</html>
